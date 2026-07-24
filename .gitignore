@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Environment variables
+.env
+.env.*
+
+# pytest
+.pytest_cache/
+
+# Editor and OS files
+.vscode/
+.DS_Store
+*.swp
+
+# Python bytecode
+*.pyc
+
+# Ignore uploads and instance configs (optional for this project)
+instance/
+uploads/
