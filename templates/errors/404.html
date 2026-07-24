@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}404 Page Not Found – InterviewAI{% endblock %}
+
+{% block body %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="text-align: center; max-width: 500px;">
+    <div style="font-size: 4rem; font-weight: 800; color: var(--primary); line-height: 1;">404</div>
+    <h2 style="margin-top: 0.5rem; margin-bottom: 0.5rem;">Page Not Found</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+      Oops! The page or interview resource you are looking for doesn't exist or has been relocated.
+    </p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+      <i class="fas fa-home"></i> Return to Homepage
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}AI Live Interview – Question {{ q_num }} of {{ total_q }} – InterviewAI{% endblock %}
+
+{% block body %}
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-canvas);">
+  <!-- Top Bar Navbar -->
+  <header style="height: 70px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000;">
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <a href="#" id="exit-interview-btn" class="btn btn-outline btn-sm" style="color: var(--accent-rose); border-color: rgba(244,63,94,0.3);">
+        <i class="fas fa-times"></i> End Interview
+      </a>
+      <div style="font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-robot" style="color: var(--primary);"></i>
+        <span>{{ interview.role }} ({{ interview.interview_type }})</span>
+      </div>
+    </div>
+
+    <!-- Question Counter, Timer, & Live Score -->
+    <div style="display: flex; align-items: center; gap: 1.25rem;">
+      {% if feedback %}
+      <div style="padding: 0.35rem 0.85rem; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; font-weight: 700; font-size: 0.85rem; color: var(--primary);">
+        AI Score: {{ feedback.overall_score }}%
+      </div>
+      {% endif %}
+
+      <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary);">
+        Question <span style="color: var(--text-primary); font-weight: 700;">{{ q_num }}</span> of {{ total_q }}
+      </div>
+
+      <!-- Live 2-Minute Question Timer -->
+      <div id="timer-container" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.9rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 20px; font-weight: 700; font-size: 0.95rem; transition: all 0.3s ease;">
+        <i class="fas fa-clock" style="font-size: 0.9rem;"></i>
+        <span id="timer-display">02:00</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress Bar Line -->
+  <div style="width: 100%; height: 4px; background: var(--border-color);">
+    <div style="height: 100%; width: {{ (q_num / total_q) * 100 }}%; background: var(--primary-gradient); transition: width 0.3s ease;"></div>
+  </div>
+
+  <!-- Main Interview Content -->
+  <main style="flex-grow: 1; max-width: 950px; width: 100%; margin: 2rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+    
+    <!-- AI Avatar & Question Card Container -->
+    <div class="card" style="padding: 2rem; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span class="badge badge-primary"><i class="fas fa-tag"></i> {{ question.topic }}</span>
+          <span class="badge badge-coming-soon" style="text-transform: capitalize;">{{ question.difficulty }}</span>
+        </div>
+        
+        <!-- Replay Question Voice Button -->
+        <button id="replay-question-btn" class="btn btn-outline btn-sm" title="Listen to question spoken aloud">
+          <i class="fas fa-volume-up" style="color: var(--accent-purple);"></i> Replay Question
+        </button>
+      </div>
+
+      <!-- Center AI Avatar & Question Display -->
+      <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+        <div style="width: 70px; height: 70px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2rem; box-shadow: 0 0 25px var(--primary-glow); flex-shrink: 0;">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-purple); font-weight: 700; margin-bottom: 0.35rem;">
+            AI Interviewer Question
+          </div>
+          <h2 id="question-text" style="font-size: 1.35rem; font-weight: 600; line-height: 1.5; color: var(--text-primary);">
+            {{ question.question_text }}
+          </h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Answer Input Form -->
+    <form action="{{ url_for('interview.live', interview_id=interview.id, q=q_num) }}" method="POST" id="interview-form" class="card" style="padding: 1.75rem; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
+      <input type="hidden" name="action" id="action-input" value="next">
+      <input type="hidden" name="time_taken" id="time-taken-input" value="0">
+      
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <label for="answer" class="form-label" style="font-weight: 600; margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-pen" style="color: var(--primary);"></i> Candidate Response
+          </label>
+          
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <!-- Microphone Voice Dictation Button -->
+            <button type="button" id="mic-btn" class="btn btn-outline btn-sm">
+              <i class="fas fa-microphone" style="color: var(--primary);"></i> Voice Dictation
+            </button>
+            <span id="char-count" style="font-size: 0.8rem; color: var(--text-muted);">0 characters</span>
+          </div>
+        </div>
+
+        <textarea id="answer" name="answer" class="form-control" rows="8" placeholder="Type or dictate your response here. Speak to technical mechanics, architectural trade-offs, or STAR framework actions..." autofocus style="font-size: 1rem; line-height: 1.6; resize: vertical;">{{ user_answer }}</textarea>
+      </div>
+
+      <!-- Action Navigation Buttons -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.75rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+        <div>
+          {% if q_num > 1 %}
+            <button type="button" class="btn btn-secondary" data-action="prev">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+          {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          {% if q_num < total_q %}
+            <button type="button" class="btn btn-outline" data-action="skip">
+              Skip Question <i class="fas fa-forward"></i>
+            </button>
+            <button type="button" class="btn btn-primary" data-action="next">
+              Submit Answer & Next <i class="fas fa-chevron-right"></i>
+            </button>
+          {% else %}
+            <button type="button" class="btn btn-primary" data-action="submit" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+              <i class="fas fa-check-circle"></i> Submit Final Answer & Complete
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+
+  </main>
+</div>
+
+<!-- Exit Confirmation Modal -->
+<div class="modal-overlay" id="exit-modal">
+  <div class="modal-card">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: var(--accent-amber); margin-bottom: 0.75rem;"></i>
+      <h3 style="font-size: 1.25rem;">End AI Interview Session?</h3>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+        Are you sure you want to end this interview? Evaluated answers will be compiled into your AI Report.
+      </p>
+    </div>
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+      <button class="btn btn-secondary" id="cancel-exit-btn" style="flex: 1;">Continue Interview</button>
+      <button class="btn btn-primary" id="confirm-exit-btn" data-href="{{ url_for('dashboard.index') }}" style="flex: 1; background: var(--accent-rose);">End & Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/live_interview.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="dashboard-container">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <i class="fas fa-brain"></i>
+      <span>InterviewAI</span>
+    </div>
+
+    <ul class="sidebar-menu">
+      <!-- 1. Dashboard -->
+      <li class="{% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <a href="{{ url_for('dashboard.index') }}">
+          <i class="fas fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <!-- 2. AI Interview -->
+      <li class="{% if request.endpoint == 'interview.setup' or request.endpoint == 'interview.live' %}active{% endif %}">
+        <a href="{{ url_for('interview.setup') }}">
+          <i class="fas fa-robot"></i>
+          <span>AI Interview</span>
+        </a>
+      </li>
+
+      <!-- 3. Resume Analyzer -->
+      <li class="{% if request.endpoint == 'analyzers.resume_analyzer' %}active{% endif %}">
+        <a href="{{ url_for('analyzers.resume_analyzer') }}">
+          <i class="fas fa-file-user"></i>
+          <span>Resume Analyzer</span>
+        </a>
+      </li>
+
+      <!-- 4. Job Description Analyzer -->
+      <li class="{% if request.endpoint == 'analyzers.jd_analyzer' %}active{% endif %}">
+        <a href="{{ url_for('analyzers.jd_analyzer') }}">
+          <i class="fas fa-tasks"></i>
+          <span>Job Description Analyzer</span>
+        </a>
+      </li>
+
+      <!-- 5. Reports -->
+      <li class="{% if request.endpoint == 'reports_bp.list_reports' or request.endpoint == 'interview.report' %}active{% endif %}">
+        <a href="{{ url_for('reports_bp.list_reports') }}">
+          <i class="fas fa-file-alt"></i>
+          <span>Reports</span>
+        </a>
+      </li>
+
+      <!-- 6. Analytics -->
+      <li class="{% if request.endpoint == 'reports_bp.analytics' %}active{% endif %}">
+        <a href="{{ url_for('reports_bp.analytics') }}">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics</span>
+        </a>
+      </li>
+
+      <!-- 7. Profile -->
+      <li class="{% if request.endpoint == 'dashboard.profile' %}active{% endif %}">
+        <a href="{{ url_for('dashboard.profile') }}">
+          <i class="fas fa-user-circle"></i>
+          <span>Profile</span>
+        </a>
+      </li>
+
+      <!-- 8. Settings -->
+      <li class="{% if request.endpoint == 'dashboard.settings' %}active{% endif %}">
+        <a href="{{ url_for('dashboard.settings') }}">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- 9. Logout -->
+    <div class="sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm w-100" style="width:100%; justify-content:flex-start;">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Navbar -->
+    <header class="top-navbar">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="search-box">
+          <i class="fas fa-search input-icon"></i>
+          <input type="text" class="form-control" placeholder="Search practice sessions, questions...">
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Theme Toggle Button -->
+        <button class="icon-btn theme-toggle-btn" title="Toggle Theme">
+          <i class="fas fa-sun"></i>
+        </button>
+
+        <!-- Notification Bell Dropdown -->
+        <div style="position: relative;">
+          <button class="icon-btn" id="notification-bell-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span id="unread-badge" style="position: absolute; top: 4px; right: 4px; padding: 2px 6px; background: var(--accent-rose); color: #fff; font-size: 0.65rem; font-weight: 800; border-radius: 10px; display: none;">0</span>
+          </button>
+
+          <!-- Notification Dropdown Menu -->
+          <div id="notification-dropdown" style="position: absolute; right: 0; top: 50px; width: 320px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--card-shadow); display: none; z-index: 2000; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+              <span style="font-weight: 700; font-size: 0.9rem;">Notifications</span>
+              <button id="mark-read-btn" style="background: none; border: none; color: var(--primary); font-size: 0.75rem; cursor: pointer; font-weight: 600;">Mark all read</button>
+            </div>
+            <div id="notification-list" style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 260px; overflow-y: auto;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">Loading notifications...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Avatar & Profile info -->
+        <a href="{{ url_for('dashboard.profile') }}" class="user-profile-menu">
+          <img src="{{ current_user.get_avatar_url() }}" alt="{{ current_user.full_name }}" class="avatar-img">
+          <div class="user-info-text d-none-mobile">
+            <span class="user-name">{{ current_user.full_name }}</span>
+            <span class="user-role">{{ current_user.target_role or 'Candidate' }}</span>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const bellBtn = document.getElementById('notification-bell-btn');
+  const dropdown = document.getElementById('notification-dropdown');
+  const badge = document.getElementById('unread-badge');
+  const list = document.getElementById('notification-list');
+  const markReadBtn = document.getElementById('mark-read-btn');
+
+  if (bellBtn && dropdown) {
+    bellBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      fetchNotifications();
+    });
+
+    document.addEventListener('click', () => {
+      dropdown.style.display = 'none';
+    });
+
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  if (markReadBtn) {
+    markReadBtn.addEventListener('click', () => {
+      fetch('/api/notifications/read-all', { method: 'POST' })
+        .then(() => fetchNotifications());
+    });
+  }
+
+  function fetchNotifications() {
+    fetch('/api/notifications')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          if (badge) {
+            if (data.unread_count > 0) {
+              badge.textContent = data.unread_count;
+              badge.style.display = 'inline-block';
+            } else {
+              badge.style.display = 'none';
+            }
+          }
+
+          if (list) {
+            if (data.notifications.length === 0) {
+              list.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No notifications found.</div>';
+            } else {
+              list.innerHTML = data.notifications.map(n => `
+                <div style="padding: 0.6rem; border-radius: 8px; background: ${n.is_read ? 'var(--bg-canvas)' : 'rgba(99,102,241,0.08)'}; font-size: 0.8rem;">
+                  <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.15rem;">${n.title}</div>
+                  <div style="color: var(--text-secondary); line-height: 1.3;">${n.message}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem;">${n.created_at}</div>
+                </div>
+              `).join('');
+            }
+          }
+        }
+      })
+      .catch(e => console.error("Notification fetch error:", e));
+  }
+
+  // Initial fetch on page load
+  fetchNotifications();
+});
+</script>
+{% endblock %}

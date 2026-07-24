@@ -1,0 +1,143 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Resume ATS Audit Report – InterviewAI{% endblock %}
+
+{% block content %}
+<div class="welcome-banner" style="display: flex; justify-content: space-between; align-items: flex-end;">
+  <div>
+    <h1>Resume ATS Audit & Skill Report 📄</h1>
+    <p>Detailed evaluation report for {{ resume.filename }}</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <button onclick="window.print()" class="btn btn-secondary btn-sm">
+      <i class="fas fa-file-pdf"></i> Export PDF Report
+    </button>
+    <a href="{{ url_for('analyzers.resume_analyzer') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-arrow-left"></i> Back to Resume Analyzer
+    </a>
+  </div>
+</div>
+
+<div style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+  
+  <!-- Overview Header Card -->
+  <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h2 style="font-size: 1.35rem;">Candidate Resume: {{ resume.parsed_name or current_user.full_name }}</h2>
+      <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+        Email: {{ resume.parsed_email or current_user.email }} • Date: {{ analysis.created_at.strftime('%b %d, %Y') }}
+      </div>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Overall ATS Score</div>
+      <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">{{ analysis.ats_score }}%</div>
+    </div>
+  </div>
+
+  <!-- 7 Sub-metric Breakdown Grid -->
+  <div>
+    <h3 style="font-size: 1.15rem; margin-bottom: 1rem;"><i class="fas fa-chart-bar" style="color: var(--primary);"></i> 7 Sub-metric Compliance Breakdown</h3>
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      
+      <div class="card stat-card">
+        <div class="stat-icon indigo" style="width:44px; height:44px;"><i class="fas fa-code"></i></div>
+        <div>
+          <div class="stat-label">Skills Match</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.skills_score }}%</div>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon purple" style="width:44px; height:44px;"><i class="fas fa-key"></i></div>
+        <div>
+          <div class="stat-label">Keywords</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.keywords_score }}%</div>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon emerald" style="width:44px; height:44px;"><i class="fas fa-briefcase"></i></div>
+        <div>
+          <div class="stat-label">Experience</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.experience_score }}%</div>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon amber" style="width:44px; height:44px;"><i class="fas fa-project-diagram"></i></div>
+        <div>
+          <div class="stat-label">Projects</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.projects_score }}%</div>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon indigo" style="width:44px; height:44px;"><i class="fas fa-graduation-cap"></i></div>
+        <div>
+          <div class="stat-label">Education</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.education_score }}%</div>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon purple" style="width:44px; height:44px;"><i class="fas fa-eye"></i></div>
+        <div>
+          <div class="stat-label">Readability</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.readability_score }}%</div>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon emerald" style="width:44px; height:44px;"><i class="fas fa-align-left"></i></div>
+        <div>
+          <div class="stat-label">Formatting</div>
+          <div class="stat-value" style="font-size: 1.35rem;">{{ analysis.formatting_score }}%</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Detailed Suggestions Cards -->
+  <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <!-- Strengths -->
+    <div class="card">
+      <h4 style="font-size: 1rem; color: var(--accent-emerald); margin-bottom: 0.75rem;"><i class="fas fa-check-circle"></i> Key Strengths</h4>
+      <div style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6;">{{ analysis.strengths }}</div>
+    </div>
+
+    <!-- Weaknesses -->
+    <div class="card">
+      <h4 style="font-size: 1rem; color: var(--accent-rose); margin-bottom: 0.75rem;"><i class="fas fa-exclamation-triangle"></i> Identified Weaknesses</h4>
+      <div style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6;">{{ analysis.weaknesses }}</div>
+    </div>
+  </div>
+
+  <!-- Actionable Improvements Card -->
+  <div class="card" style="background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.2);">
+    <h3 style="font-size: 1.15rem; margin-bottom: 0.75rem; color: var(--primary);"><i class="fas fa-tasks"></i> Actionable Improvement Suggestions</h3>
+    <div style="font-size: 0.95rem; color: var(--text-primary); white-space: pre-wrap; line-height: 1.6;">{{ analysis.actionable_improvements }}</div>
+  </div>
+
+  <!-- Career & Formatting Tips Card -->
+  <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <div class="card">
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-purple);"><i class="fas fa-spell-check"></i> Grammar & Formatting Tips</h4>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: pre-wrap;">{{ analysis.grammar_suggestions }}</div>
+    </div>
+
+    <div class="card">
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-amber);"><i class="fas fa-compass"></i> Career Recommendations</h4>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: pre-wrap;">{{ analysis.career_recommendations }}</div>
+    </div>
+  </div>
+
+  <!-- Return Button -->
+  <div style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 3rem;">
+    <a href="{{ url_for('analyzers.resume_analyzer') }}" class="btn btn-primary btn-lg">
+      <i class="fas fa-arrow-left"></i> Return to Resume Analyzer
+    </a>
+  </div>
+
+</div>
+{% endblock %}

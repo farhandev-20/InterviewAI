@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Prepare for Interviews with AI – InterviewAI{% endblock %}
+
+{% block body %}
+<!-- Landing Navbar -->
+<nav class="landing-nav">
+  <div class="logo">
+    <i class="fas fa-brain"></i>
+    <span>InterviewAI</span>
+  </div>
+
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#testimonials">Testimonials</a></li>
+  </ul>
+
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <button class="icon-btn theme-toggle-btn" title="Toggle Light/Dark Theme">
+      <i class="fas fa-sun"></i>
+    </button>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-sm">Go to Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-sm">Login</a>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Get Started</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-glow"></div>
+  <div class="hero-badge">
+    <i class="fas fa-sparkles" style="color: var(--accent-purple);"></i>
+    <span>Next-Gen AI Interview Preparation Platform</span>
+  </div>
+
+  <h1 class="hero-title">Prepare for Interviews with AI</h1>
+  <p class="hero-subtitle">
+    Practice technical and HR interviews with a modern interview preparation platform. Master coding problems, system design, and behavioral STAR techniques with real-time feedback.
+  </p>
+
+  <div class="hero-buttons">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-chart-line"></i> Open Dashboard
+      </a>
+    {% else %}
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+        Get Started Free <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">
+        <i class="fas fa-lock"></i> Login
+      </a>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+  <div class="section-header">
+    <span class="badge badge-primary">Supercharge Your Prep</span>
+    <h2 style="margin-top: 0.5rem;">Everything You Need to Ace Tech Interviews</h2>
+    <p>Constructed with guidance from top engineering managers and HR recruiters.</p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card feature-card card-hover">
+      <div class="feature-icon">
+        <i class="fas fa-terminal"></i>
+      </div>
+      <h3>Technical Coding Practice</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Solve Data Structures, Algorithms, and System Architecture challenges with intelligent automated hints and real-time execution feedback.
+      </p>
+    </div>
+
+    <div class="card feature-card card-hover">
+      <div class="feature-icon" style="background: rgba(168, 85, 247, 0.1); color: var(--accent-purple); border-color: rgba(168, 85, 247, 0.2);">
+        <i class="fas fa-user-tie"></i>
+      </div>
+      <h3>Behavioral STAR Method</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Refine your responses for HR questions using proven Situation, Task, Action, and Result structured coaching.
+      </p>
+    </div>
+
+    <div class="card feature-card card-hover">
+      <div class="feature-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.2);">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <h3>Detailed Analytics & Metrics</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Track your performance trajectory over time with interactive Chart.js score breakdowns and skill mastery radar graphs.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="how-it-works-section">
+  <div class="section-header">
+    <span class="badge badge-coming-soon">Simple 3-Step Process</span>
+    <h2 style="margin-top: 0.5rem;">How InterviewAI Works</h2>
+    <p>From setup to interview readiness in three seamless steps.</p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card card-hover">
+      <div class="step-number">01</div>
+      <h3 style="margin-bottom: 0.5rem;">Select Your Target Role</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Choose from Frontend, Backend, Full Stack, DevOps, Data Science, or Executive Engineering paths.
+      </p>
+    </div>
+
+    <div class="card card-hover">
+      <div class="step-number">02</div>
+      <h3 style="margin-bottom: 0.5rem;">Conduct Interactive Mock Interviews</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Simulate real-world interviewer dynamics with adaptive questions calibrated to your skill level.
+      </p>
+    </div>
+
+    <div class="card card-hover">
+      <div class="step-number">03</div>
+      <h3 style="margin-bottom: 0.5rem;">Review Insights & Offers</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Receive comprehensive reports highlighting strengths, areas of growth, and actionable recommendations.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section id="testimonials" class="testimonials-section">
+  <div class="section-header">
+    <span class="badge badge-success">Success Stories</span>
+    <h2 style="margin-top: 0.5rem;">Loved by Software Engineers World-Wide</h2>
+  </div>
+
+  <div class="grid-3">
+    <div class="card card-hover">
+      <p style="font-style: italic; color: var(--text-secondary); font-size: 0.95rem;">
+        "InterviewAI helped me pinpoint gaps in my System Design responses. Passed my Senior Engineer loop with flying colors!"
+      </p>
+      <div class="testimonial-user">
+        <img src="https://ui-avatars.com/api/?name=Alex+Morgan&background=6366f1&color=fff" alt="Alex" class="testimonial-avatar">
+        <div>
+          <h4 style="font-size: 0.95rem;">Alex Morgan</h4>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Software Engineer @ Stripe</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-hover">
+      <p style="font-style: italic; color: var(--text-secondary); font-size: 0.95rem;">
+        "The dark mode interface feels as crisp as Linear. Practicing HR questions boosted my confidence tenfold."
+      </p>
+      <div class="testimonial-user">
+        <img src="https://ui-avatars.com/api/?name=Sarah+Chen&background=a855f7&color=fff" alt="Sarah" class="testimonial-avatar">
+        <div>
+          <h4 style="font-size: 0.95rem;">Sarah Chen</h4>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Full Stack Dev @ Vercel</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-hover">
+      <p style="font-style: italic; color: var(--text-secondary); font-size: 0.95rem;">
+        "Hands down the best interview preparation experience. The interactive charts make tracking weekly progress effortless."
+      </p>
+      <div class="testimonial-user">
+        <img src="https://ui-avatars.com/api/?name=Marcus+Vance&background=10b981&color=fff" alt="Marcus" class="testimonial-avatar">
+        <div>
+          <h4 style="font-size: 0.95rem;">Marcus Vance</h4>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Tech Lead @ Notion</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div style="margin-bottom: 1rem;" class="logo">
+    <i class="fas fa-brain"></i>
+    <span>InterviewAI</span>
+  </div>
+  <p>© 2026 InterviewAI Inc. All rights reserved. Premium AI Interview Preparation Platform.</p>
+</footer>
+{% endblock %}

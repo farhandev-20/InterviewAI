@@ -1,0 +1,173 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}AI Resume Analyzer & ATS Audit – InterviewAI{% endblock %}
+
+{% block content %}
+<div class="welcome-banner">
+  <h1>AI Resume Analyzer & ATS Audit 📄</h1>
+  <p>Upload your PDF or Word resume to compute your 7-metric ATS Score, detect keyword gaps, and get actionable recommendations.</p>
+</div>
+
+<div class="grid-3" style="grid-template-columns: 1fr 1.2fr; gap: 2rem;">
+  
+  <!-- Resume Upload & Form Card -->
+  <div class="card">
+    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">
+      <i class="fas fa-file-upload" style="color: var(--primary);"></i> Upload or Paste Resume
+    </h3>
+
+    <form action="{{ url_for('analyzers.resume_analyzer') }}" method="POST" enctype="multipart/form-data">
+      <!-- Target Role -->
+      <div class="form-group">
+        <label for="target_role" class="form-label">Target Role / Position</label>
+        <input type="text" id="target_role" name="target_role" class="form-control" value="{{ target_role }}" placeholder="e.g. Senior Full Stack Engineer" required>
+      </div>
+
+      <!-- File Upload Input (PDF / DOCX) -->
+      <div class="form-group" style="background: var(--bg-canvas); border: 2px dashed var(--border-color); border-radius: 14px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;">
+        <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
+        <div style="font-weight: 600; font-size: 0.95rem;">Upload Resume File</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Supports PDF (.pdf) or Word (.docx) up to 16MB</div>
+        <input type="file" id="resume_file" name="resume_file" accept=".pdf,.docx,.doc,.txt" class="form-control" style="font-size: 0.85rem;">
+      </div>
+
+      <div style="text-align: center; margin: 0.75rem 0; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">— OR PASTE TEXT —</div>
+
+      <!-- Plain Text Input -->
+      <div class="form-group">
+        <label for="resume_text" class="form-label">Resume Plain Text</label>
+        <textarea id="resume_text" name="resume_text" class="form-control" rows="8" placeholder="Paste your resume content here...">{{ resume_text }}</textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" style="width: 100%; padding: 0.85rem;">
+        <i class="fas fa-magic"></i> Calculate ATS Score & Analyze
+      </button>
+    </form>
+  </div>
+
+  <!-- Analysis Results & 7-Metric Breakdown Card -->
+  <div class="card">
+    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+      <span><i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> ATS Compliance Audit</span>
+      {% if analysis %}
+        <a href="{{ url_for('analyzers.resume_report', analysis_id=analysis.id) }}" class="btn btn-outline btn-sm">
+          <i class="fas fa-file-pdf"></i> View Printable Report
+        </a>
+      {% endif %}
+    </h3>
+
+    {% if analysis %}
+      <!-- Overall ATS Score Banner -->
+      <div style="background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.12) 100%); border: 1px solid rgba(99,102,241,0.3); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700;">Overall ATS Score</div>
+          <div style="font-size: 2.8rem; font-weight: 800; color: var(--primary); line-height: 1;">
+            {{ analysis.ats_score }}<span style="font-size: 1.5rem;">/100</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--accent-emerald); margin-top: 0.35rem; font-weight: 600;">
+            <i class="fas fa-check-circle"></i> Optimized for target: {{ target_role }}
+          </div>
+        </div>
+
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-surface); border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: var(--primary);">
+          {{ analysis.ats_score }}%
+        </div>
+      </div>
+
+      <!-- 7 Sub-metrics Breakdown Progress Bars -->
+      <h4 style="font-size: 0.95rem; margin-bottom: 1rem; color: var(--text-primary);">Sub-metric Compliance Breakdown</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.75rem;">
+        
+        <!-- Skills Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-code" style="color: var(--primary);"></i> Technical Skills Alignment</span>
+            <span>{{ analysis.skills_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.skills_score }}%; background-color: var(--primary);"></div></div>
+        </div>
+
+        <!-- Keywords Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-key" style="color: var(--accent-purple);"></i> ATS Keywords Optimization</span>
+            <span>{{ analysis.keywords_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.keywords_score }}%; background-color: var(--accent-purple);"></div></div>
+        </div>
+
+        <!-- Experience Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-briefcase" style="color: var(--accent-emerald);"></i> Experience & Impact Metrics</span>
+            <span>{{ analysis.experience_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.experience_score }}%; background-color: var(--accent-emerald);"></div></div>
+        </div>
+
+        <!-- Projects Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-project-diagram" style="color: var(--accent-amber);"></i> Project Depth & Architecture</span>
+            <span>{{ analysis.projects_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.projects_score }}%; background-color: var(--accent-amber);"></div></div>
+        </div>
+
+        <!-- Education Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-graduation-cap" style="color: #3b82f6;"></i> Education & Certifications</span>
+            <span>{{ analysis.education_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.education_score }}%; background-color: #3b82f6;"></div></div>
+        </div>
+
+        <!-- Readability Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-eye" style="color: #06b6d4;"></i> Readability & Structure</span>
+            <span>{{ analysis.readability_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.readability_score }}%; background-color: #06b6d4;"></div></div>
+        </div>
+
+        <!-- Formatting Score -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <span><i class="fas fa-align-left" style="color: var(--accent-rose);"></i> Layout & Formatting Cleanliness</span>
+            <span>{{ analysis.formatting_score }}%</span>
+          </div>
+          <div class="strength-meter"><div class="strength-bar" style="width: {{ analysis.formatting_score }}%; background-color: var(--accent-rose);"></div></div>
+        </div>
+      </div>
+
+      <!-- Summary & Actionable Improvements -->
+      <div style="background: var(--bg-canvas); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--primary);"><i class="fas fa-lightbulb"></i> Executive Summary</h4>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">{{ analysis.summary }}</p>
+      </div>
+
+      <div style="background: rgba(16,185,129,0.05); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-emerald);"><i class="fas fa-tasks"></i> Actionable Improvement Suggestions</h4>
+        <div style="font-size: 0.875rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6;">{{ analysis.actionable_improvements }}</div>
+      </div>
+
+      <!-- Missing Skills Badges -->
+      {% if analysis.missing_skills %}
+      <div>
+        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--accent-rose);"><i class="fas fa-exclamation-triangle"></i> Missing Technical Keywords</h4>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: pre-wrap;">{{ analysis.missing_skills }}</div>
+      </div>
+      {% endif %}
+
+    {% else %}
+      <div style="text-align: center; padding: 5rem 1rem; color: var(--text-muted);">
+        <i class="fas fa-file-pdf" style="font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.4;"></i>
+        <p style="font-size: 1rem; margin-bottom: 0.5rem;">No ATS analysis record found yet.</p>
+        <p style="font-size: 0.85rem; max-width: 360px; margin: 0 auto;">Upload your PDF or Word resume on the left to compute your 7-metric ATS score and keyword breakdown.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

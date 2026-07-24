@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}500 Internal Error – InterviewAI{% endblock %}
+
+{% block body %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="text-align: center; max-width: 500px;">
+    <div style="font-size: 4rem; font-weight: 800; color: var(--accent-rose); line-height: 1;">500</div>
+    <h2 style="margin-top: 0.5rem; margin-bottom: 0.5rem;">Internal Server Error</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+      Something unexpected happened on our server. Our team has been notified and is working to resolve it.
+    </p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+      <i class="fas fa-arrow-left"></i> Go Back Home
+    </a>
+  </div>
+</div>
+{% endblock %}

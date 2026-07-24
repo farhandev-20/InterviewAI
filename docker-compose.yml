@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: interviewai_platform
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=interviewai_super_secret_key_production_98374928
+      - DATABASE_URL=sqlite:///interviewai.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./instance:/app/instance
+      - ./static/uploads:/app/static/uploads
