@@ -9,7 +9,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    google_id = db.Column(db.String(255), nullable=True, unique=True)
     target_role = db.Column(db.String(100), nullable=True, default="Full Stack Developer")
     skills = db.Column(db.Text, nullable=True, default="Python, JavaScript, Data Structures, System Design")
     profile_image = db.Column(db.String(255), nullable=True, default="default_avatar.png")
@@ -18,10 +19,13 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password):
         """Hash and set the user's password."""
-        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+        if password:
+            self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
         """Verify password hash."""
+        if not self.password_hash or not password:
+            return False
         return check_password_hash(self.password_hash, password)
 
     def update_last_login(self):

@@ -36,9 +36,24 @@ def create_app(config_name=None):
     app.register_error_handler(404, routes.page_not_found)
     app.register_error_handler(500, routes.internal_server_error)
 
-    # Create tables
+    # Create tables and run lightweight migrations
     with app.app_context():
         db.create_all()
+        from sqlalchemy import text, inspect
+        try:
+            inspector = inspect(db.engine)
+            if 'users' in inspector.get_table_names():
+                user_cols = [c['name'] for c in inspector.get_columns('users')]
+                if 'google_id' not in user_cols:
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN google_id VARCHAR(255)"))
+                    db.session.commit()
+            if 'interviews' in inspector.get_table_names():
+                inv_cols = [c['name'] for c in inspector.get_columns('interviews')]
+                if 'mode' not in inv_cols:
+                    db.session.execute(text("ALTER TABLE interviews ADD COLUMN mode VARCHAR(50) DEFAULT 'text'"))
+                    db.session.commit()
+        except Exception as e:
+            print(f"[Database Migration Notice] {e}")
 
     return app
 

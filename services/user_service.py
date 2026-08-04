@@ -48,6 +48,31 @@ class UserService:
         return user, None
 
     @staticmethod
+    def create_or_get_google_user(email, full_name, google_id=None):
+        """Authenticate or register user via Google OAuth while preserving existing accounts."""
+        email_clean = email.strip().lower()
+        user = UserService.get_by_email(email_clean)
+        if user:
+            if google_id and not user.google_id:
+                user.google_id = google_id
+            user.update_last_login()
+            db.session.commit()
+            return user
+
+        user = User(
+            full_name=full_name.strip() if full_name else "Google Candidate",
+            email=email_clean,
+            google_id=google_id or f"google_{int(os.path.getmtime(__file__))}",
+            target_role="Software Engineer",
+            skills="Python, Web Development, Problem Solving"
+        )
+        user.set_password(f"google_oauth_dummy_{int(os.path.getmtime(__file__))}")
+        db.session.add(user)
+        db.session.commit()
+        user.update_last_login()
+        return user
+
+    @staticmethod
     def update_profile(user_id, full_name, email, target_role, skills, file_obj=None, upload_folder=None, allowed_extensions=None):
         """Update user profile information and profile photo."""
         user = UserService.get_by_id(user_id)

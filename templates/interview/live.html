@@ -7,11 +7,14 @@
   <!-- Top Bar Navbar -->
   <header style="height: 70px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000;">
     <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <a href="{{ url_for('dashboard.index') }}" class="brand-logo-container">
+        <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="InterviewAI" class="brand-logo-icon" style="width: 32px; height: 32px;">
+      </a>
       <a href="#" id="exit-interview-btn" class="btn btn-outline btn-sm" style="color: var(--accent-rose); border-color: rgba(244,63,94,0.3);">
         <i class="fas fa-times"></i> End Interview
       </a>
       <div style="font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
-        <i class="fas fa-robot" style="color: var(--primary);"></i>
+        <i class="fas fa-video" style="color: var(--primary);"></i>
         <span>{{ interview.role }} ({{ interview.interview_type }})</span>
       </div>
     </div>
@@ -42,20 +45,91 @@
   </div>
 
   <!-- Main Interview Content -->
-  <main style="flex-grow: 1; max-width: 950px; width: 100%; margin: 2rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+  <main style="flex-grow: 1; max-width: 1100px; width: 100%; margin: 2rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
     
-    <!-- AI Avatar & Question Card Container -->
+    {% if interview.mode == 'video' %}
+    <!-- Video Mode Split View (Webcam + Question & Answer) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;" class="video-split-layout">
+      <!-- Left Column: Webcam Stream & Camera Controls -->
+      <div class="card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+        <div class="webcam-container">
+          <video id="webcam-preview" class="webcam-video" autoplay playsinline muted></video>
+          <div class="webcam-overlay-badge" id="cam-status-badge">
+            <span class="recording-dot"></span> Live Camera & Mic
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+          <button type="button" id="btn-toggle-cam" class="btn btn-outline btn-sm">
+            <i class="fas fa-video"></i> Cam On
+          </button>
+          <button type="button" id="btn-toggle-mic" class="btn btn-outline btn-sm">
+            <i class="fas fa-microphone"></i> Mic On
+          </button>
+          <button type="button" id="btn-request-cam" class="btn btn-secondary btn-sm">
+            <i class="fas fa-camera"></i> Request Permission
+          </button>
+        </div>
+
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.35rem;">
+            <i class="fas fa-wave-square" style="color: var(--primary);"></i> Live Speech Transcript
+          </div>
+          <div class="live-transcript-box" id="live-transcript">
+            Transcribed speech will stream here in real-time as you speak...
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Question & Dynamic AI Controls -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="card" style="padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span class="badge badge-primary"><i class="fas fa-tag"></i> {{ question.topic }}</span>
+            <button id="btn-tts-read" type="button" class="btn btn-outline btn-sm">
+              <i class="fas fa-volume-up"></i> Read Aloud
+            </button>
+          </div>
+          <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-purple); font-weight: 700; margin-bottom: 0.25rem;">
+            Video Question {{ q_num }} of {{ total_q }}
+          </div>
+          <h2 id="question-text-content" style="font-size: 1.25rem; font-weight: 600; line-height: 1.5;">
+            {{ question.question_text }}
+          </h2>
+
+          <div style="margin-top: 1rem;">
+            <button type="button" id="btn-ask-followup" data-interview-id="{{ interview.id }}" class="btn btn-outline btn-sm" style="width: 100%;">
+              <i class="fas fa-robot"></i> Ask Dynamic AI Follow-up Question
+            </button>
+            <div id="followup-container" style="display: none; margin-top: 0.85rem; padding: 0.85rem; background: rgba(99,102,241,0.1); border-left: 3px solid var(--primary); border-radius: 8px; font-size: 0.9rem;">
+              <strong style="color: var(--primary);">AI Follow-up:</strong>
+              <div id="followup-text" style="margin-top: 0.25rem; color: var(--text-primary);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+
+    <!-- Standard Text / Voice Question Card Container -->
     <div class="card" style="padding: 2rem; position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <div style="display: flex; gap: 0.5rem; align-items: center;">
           <span class="badge badge-primary"><i class="fas fa-tag"></i> {{ question.topic }}</span>
           <span class="badge badge-coming-soon" style="text-transform: capitalize;">{{ question.difficulty }}</span>
+          {% if interview.mode == 'voice' %}
+            <span class="badge badge-success"><i class="fas fa-microphone-alt"></i> Voice Mode</span>
+          {% endif %}
         </div>
         
-        <!-- Replay Question Voice Button -->
-        <button id="replay-question-btn" class="btn btn-outline btn-sm" title="Listen to question spoken aloud">
-          <i class="fas fa-volume-up" style="color: var(--accent-purple);"></i> Replay Question
-        </button>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button id="btn-tts-read" class="btn btn-outline btn-sm" title="Listen to question spoken aloud">
+            <i class="fas fa-volume-up" style="color: var(--accent-purple);"></i> Read Aloud
+          </button>
+          <button id="replay-question-btn" class="btn btn-outline btn-sm">
+            <i class="fas fa-redo"></i> Replay
+          </button>
+        </div>
       </div>
 
       <!-- Center AI Avatar & Question Display -->
@@ -67,34 +141,47 @@
           <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-purple); font-weight: 700; margin-bottom: 0.35rem;">
             AI Interviewer Question
           </div>
-          <h2 id="question-text" style="font-size: 1.35rem; font-weight: 600; line-height: 1.5; color: var(--text-primary);">
+          <h2 id="question-text-content" style="font-size: 1.35rem; font-weight: 600; line-height: 1.5; color: var(--text-primary);">
             {{ question.question_text }}
           </h2>
         </div>
       </div>
+
+      <!-- Dynamic AI Followup Trigger -->
+      <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <button type="button" id="btn-ask-followup" data-interview-id="{{ interview.id }}" class="btn btn-outline btn-sm">
+          <i class="fas fa-robot"></i> Generate Dynamic AI Follow-up Question
+        </button>
+        <div id="followup-container" style="display: none; margin-top: 0.85rem; padding: 0.85rem; background: rgba(99,102,241,0.1); border-left: 3px solid var(--primary); border-radius: 8px; font-size: 0.9rem;">
+          <strong style="color: var(--primary);">AI Follow-up Question:</strong>
+          <div id="followup-text" style="margin-top: 0.25rem; color: var(--text-primary);"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Answer Input Form -->
+    {% endif %}
+
+    <!-- Answer Input Form (Shared Across All Modes) -->
     <form action="{{ url_for('interview.live', interview_id=interview.id, q=q_num) }}" method="POST" id="interview-form" class="card" style="padding: 1.75rem; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
       <input type="hidden" name="action" id="action-input" value="next">
-      <input type="hidden" name="time_taken" id="time-taken-input" value="0">
+      <input type="hidden" name="time_taken" id="time_taken_input" value="0">
       
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <label for="answer" class="form-label" style="font-weight: 600; margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <label for="answer-input" class="form-label" style="font-weight: 600; margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
             <i class="fas fa-pen" style="color: var(--primary);"></i> Candidate Response
           </label>
           
           <div style="display: flex; align-items: center; gap: 1rem;">
-            <!-- Microphone Voice Dictation Button -->
-            <button type="button" id="mic-btn" class="btn btn-outline btn-sm">
-              <i class="fas fa-microphone" style="color: var(--primary);"></i> Voice Dictation
+            <!-- Speech-to-Text Button -->
+            <button type="button" id="btn-stt-toggle" class="btn btn-outline btn-sm">
+              <i class="fas fa-microphone" style="color: var(--primary);"></i> Start Voice Answer
             </button>
             <span id="char-count" style="font-size: 0.8rem; color: var(--text-muted);">0 characters</span>
           </div>
         </div>
 
-        <textarea id="answer" name="answer" class="form-control" rows="8" placeholder="Type or dictate your response here. Speak to technical mechanics, architectural trade-offs, or STAR framework actions..." autofocus style="font-size: 1rem; line-height: 1.6; resize: vertical;">{{ user_answer }}</textarea>
+        <textarea id="answer-input" name="answer" class="form-control" rows="7" placeholder="Type or dictate your response here. Speak to technical mechanics, architectural trade-offs, or STAR framework actions..." autofocus style="font-size: 1rem; line-height: 1.6; resize: vertical;">{{ user_answer }}</textarea>
       </div>
 
       <!-- Action Navigation Buttons -->
@@ -146,5 +233,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/interview.js') }}"></script>
 <script src="{{ url_for('static', filename='js/live_interview.js') }}"></script>
 {% endblock %}

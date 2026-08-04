@@ -9,6 +9,7 @@ class Interview(db.Model):
     role = db.Column(db.String(100), nullable=False)
     difficulty = db.Column(db.String(50), nullable=False)
     interview_type = db.Column(db.String(50), nullable=False)  # Technical, HR, Mixed
+    mode = db.Column(db.String(50), default='text', nullable=True)  # text, voice, video
     total_questions = db.Column(db.Integer, nullable=False, default=5)
     start_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     end_time = db.Column(db.DateTime, nullable=True)

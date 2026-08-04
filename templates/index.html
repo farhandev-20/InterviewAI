@@ -5,10 +5,13 @@
 {% block body %}
 <!-- Landing Navbar -->
 <nav class="landing-nav">
-  <div class="logo">
-    <i class="fas fa-brain"></i>
-    <span>InterviewAI</span>
-  </div>
+  <a href="{{ url_for('main.index') }}" class="brand-logo-container">
+    <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="InterviewAI Logo" class="brand-logo-icon">
+    <div class="brand-logo-text">
+      <span class="brand-logo-title">Interview<span class="ai-gradient">AI</span></span>
+      <span class="brand-logo-tagline">Prepare • Practice • Perform</span>
+    </div>
+  </a>
 
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
@@ -58,6 +61,78 @@
   </div>
 </section>
 
+<!-- Demo Video Showcase Section -->
+<section id="demo" style="max-width: 1100px; margin: 0 auto 5rem auto; padding: 0 1.5rem;">
+  <div class="section-header">
+    <span class="badge badge-primary"><i class="fas fa-play-circle"></i> Live Platform Demo</span>
+    <h2 style="margin-top: 0.5rem;">Experience Next-Gen AI Mock Interviews</h2>
+    <p>Simulate realistic interview loops with camera preview, live speech transcription, and instant AI scores.</p>
+  </div>
+
+  <div class="card" style="padding: 1.5rem; background: linear-gradient(145deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.9) 100%); border: 1px solid rgba(99,102,241,0.25); box-shadow: 0 20px 40px -15px var(--primary-glow); border-radius: 1.25rem;">
+    <div style="position: relative; aspect-ratio: 16 / 9; background: #070a12; border-radius: 1rem; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="position: absolute; top: 1.25rem; left: 1.25rem; display: flex; gap: 0.5rem; z-index: 10;">
+        <span class="badge badge-danger" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+          <span class="recording-dot"></span> LIVE HD WEBCAM
+        </span>
+        <span class="badge badge-primary"><i class="fas fa-robot"></i> AI HR Interviewer Active</span>
+      </div>
+
+      <!-- Demo Mockup UI Grid inside Player -->
+      <div style="width: 100%; height: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 3rem 2rem 2rem 2rem; box-sizing: border-box; align-items: center;">
+        <!-- Left: AI Avatar Animation -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+          <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 3rem; box-shadow: 0 0 35px var(--primary-glow); animation: pulse-red 2s infinite;">
+            <i class="fas fa-robot"></i>
+          </div>
+          <h4 style="margin-top: 1rem; font-size: 1.1rem; color: #fff;">Sophia • Lead AI Recruiter</h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); max-width: 280px; margin-top: 0.25rem;">
+            "Walk me through how you design rate limiting for microservices..."
+          </p>
+        </div>
+
+        <!-- Right: Candidate Live Webcam Stream Mockup -->
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-emerald);"><i class="fas fa-check-circle"></i> Mic & Camera Active</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Timer: 01:45</span>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(0,0,0,0.4); padding: 0.75rem; border-radius: 8px;">
+            <i class="fas fa-quote-left" style="color: var(--primary); margin-right: 0.35rem;"></i>
+            "I implement token bucket algorithm using Redis for in-memory latency..."
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+            <span class="badge badge-primary">Technical: 92%</span>
+            <span class="badge badge-success">Confidence: 95%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Statistics Section -->
+<section style="background: var(--bg-surface); border-y: 1px solid var(--border-color); padding: 4rem 1.5rem; margin-bottom: 5rem;">
+  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; text-align: center;">
+    <div>
+      <div style="font-size: 3rem; font-weight: 800; color: var(--primary);">50,000+</div>
+      <div style="font-size: 0.95rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem;">Mock Interviews Conducted</div>
+    </div>
+    <div>
+      <div style="font-size: 3rem; font-weight: 800; color: var(--accent-emerald);">94.8%</div>
+      <div style="font-size: 0.95rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem;">Offer Conversion Rate</div>
+    </div>
+    <div>
+      <div style="font-size: 3rem; font-weight: 800; color: var(--accent-purple);">5 Metrics</div>
+      <div style="font-size: 0.95rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem;">Automated Score Evaluation</div>
+    </div>
+    <div>
+      <div style="font-size: 3rem; font-weight: 800; color: var(--accent-amber);">24/7</div>
+      <div style="font-size: 0.95rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem;">Instant Gemini AI Feedback</div>
+    </div>
+  </div>
+</section>
+
 <!-- Features Section -->
 <section id="features" class="features-section">
   <div class="section-header">
@@ -69,31 +144,31 @@
   <div class="grid-3">
     <div class="card feature-card card-hover">
       <div class="feature-icon">
-        <i class="fas fa-terminal"></i>
+        <i class="fas fa-video"></i>
       </div>
-      <h3>Technical Coding Practice</h3>
+      <h3>Live Webcam Video Interviews</h3>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Solve Data Structures, Algorithms, and System Architecture challenges with intelligent automated hints and real-time execution feedback.
+        Practice in Video mode with HD webcam preview, mic controls, countdown timer, and live speech transcription.
       </p>
     </div>
 
     <div class="card feature-card card-hover">
       <div class="feature-icon" style="background: rgba(168, 85, 247, 0.1); color: var(--accent-purple); border-color: rgba(168, 85, 247, 0.2);">
-        <i class="fas fa-user-tie"></i>
+        <i class="fas fa-microphone-alt"></i>
       </div>
-      <h3>Behavioral STAR Method</h3>
+      <h3>Speech-to-Text & Text-to-Speech</h3>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Refine your responses for HR questions using proven Situation, Task, Action, and Result structured coaching.
+        Speak your answers naturally using voice recognition, and hear questions spoken aloud by AI HR avatar.
       </p>
     </div>
 
     <div class="card feature-card card-hover">
       <div class="feature-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.2);">
-        <i class="fas fa-chart-bar"></i>
+        <i class="fas fa-file-user"></i>
       </div>
-      <h3>Detailed Analytics & Metrics</h3>
+      <h3>Resume-Tailored Questions</h3>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Track your performance trajectory over time with interactive Chart.js score breakdowns and skill mastery radar graphs.
+        Upload your resume to generate personalized questions directly probing your projects, architecture, and tech stack.
       </p>
     </div>
   </div>
@@ -110,25 +185,25 @@
   <div class="grid-3">
     <div class="card card-hover">
       <div class="step-number">01</div>
-      <h3 style="margin-bottom: 0.5rem;">Select Your Target Role</h3>
+      <h3 style="margin-bottom: 0.5rem;">Choose Mode & Role</h3>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Choose from Frontend, Backend, Full Stack, DevOps, Data Science, or Executive Engineering paths.
+        Select Text, Voice, or Video interview mode along with your target role and difficulty level.
       </p>
     </div>
 
     <div class="card card-hover">
       <div class="step-number">02</div>
-      <h3 style="margin-bottom: 0.5rem;">Conduct Interactive Mock Interviews</h3>
+      <h3 style="margin-bottom: 0.5rem;">Conduct Interactive Session</h3>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Simulate real-world interviewer dynamics with adaptive questions calibrated to your skill level.
+        Answer AI HR questions using live video, speech-to-text dictation, or typed responses with dynamic follow-up prompts.
       </p>
     </div>
 
     <div class="card card-hover">
       <div class="step-number">03</div>
-      <h3 style="margin-bottom: 0.5rem;">Review Insights & Offers</h3>
+      <h3 style="margin-bottom: 0.5rem;">Download PDF & Master Gaps</h3>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Receive comprehensive reports highlighting strengths, areas of growth, and actionable recommendations.
+        Receive 5-metric score reports, strengths, areas for improvement, model solutions, and download PDF reports.
       </p>
     </div>
   </div>
@@ -144,7 +219,7 @@
   <div class="grid-3">
     <div class="card card-hover">
       <p style="font-style: italic; color: var(--text-secondary); font-size: 0.95rem;">
-        "InterviewAI helped me pinpoint gaps in my System Design responses. Passed my Senior Engineer loop with flying colors!"
+        "The Video interview mode with live webcam streaming felt like a real System Design loop. Passed my Senior Engineer interview at Stripe!"
       </p>
       <div class="testimonial-user">
         <img src="https://ui-avatars.com/api/?name=Alex+Morgan&background=6366f1&color=fff" alt="Alex" class="testimonial-avatar">
@@ -157,7 +232,7 @@
 
     <div class="card card-hover">
       <p style="font-style: italic; color: var(--text-secondary); font-size: 0.95rem;">
-        "The dark mode interface feels as crisp as Linear. Practicing HR questions boosted my confidence tenfold."
+        "Speech-to-text dictation and voice question reading made practicing HR behavioral STAR questions completely effortless."
       </p>
       <div class="testimonial-user">
         <img src="https://ui-avatars.com/api/?name=Sarah+Chen&background=a855f7&color=fff" alt="Sarah" class="testimonial-avatar">
@@ -170,7 +245,7 @@
 
     <div class="card card-hover">
       <p style="font-style: italic; color: var(--text-secondary); font-size: 0.95rem;">
-        "Hands down the best interview preparation experience. The interactive charts make tracking weekly progress effortless."
+        "Resume-tailored questions asked about my exact database project! The detailed PDF reports were invaluable."
       </p>
       <div class="testimonial-user">
         <img src="https://ui-avatars.com/api/?name=Marcus+Vance&background=10b981&color=fff" alt="Marcus" class="testimonial-avatar">
@@ -183,12 +258,114 @@
   </div>
 </section>
 
-<!-- Footer -->
-<footer class="footer">
-  <div style="margin-bottom: 1rem;" class="logo">
-    <i class="fas fa-brain"></i>
-    <span>InterviewAI</span>
+<!-- FAQ Accordion Section -->
+<section id="faq" style="max-width: 900px; margin: 0 auto 5rem auto; padding: 0 1.5rem;">
+  <div class="section-header">
+    <span class="badge badge-primary">Got Questions?</span>
+    <h2 style="margin-top: 0.5rem;">Frequently Asked Questions</h2>
+    <p>Everything you need to know about InterviewAI platform capabilities.</p>
   </div>
-  <p>© 2026 InterviewAI Inc. All rights reserved. Premium AI Interview Preparation Platform.</p>
+
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="card" style="padding: 1.25rem; cursor: pointer;" onclick="toggleFaq(this)">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1rem;">
+        <span>How does the AI evaluate my interview responses?</span>
+        <i class="fas fa-chevron-down text-muted"></i>
+      </div>
+      <p style="display: none; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+        Gemini AI analyzes your response across 5 core competencies: Technical Accuracy, Communication Clarity, Confidence Level, Grammar, and Relevance to Role. You receive instant numerical scores and actionable bullet points for improvement.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; cursor: pointer;" onclick="toggleFaq(this)">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1rem;">
+        <span>Is my webcam video stored on any external server?</span>
+        <i class="fas fa-chevron-down text-muted"></i>
+      </div>
+      <p style="display: none; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+        No. Your webcam video feed is processed entirely in your browser using standard HTML5 MediaStream API. No raw video files are uploaded or saved to external servers.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; cursor: pointer;" onclick="toggleFaq(this)">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1rem;">
+        <span>Can I generate questions tailored to my uploaded resume?</span>
+        <i class="fas fa-chevron-down text-muted"></i>
+      </div>
+      <p style="display: none; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+        Yes! In the Interview Setup form, enable "Resume-Tailored Questions". The AI will parse your uploaded resume and formulate custom questions targeting your actual projects, tech stack, and achievements.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; cursor: pointer;" onclick="toggleFaq(this)">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1rem;">
+        <span>What interview modes are available?</span>
+        <i class="fas fa-chevron-down text-muted"></i>
+      </div>
+      <p style="display: none; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+        InterviewAI offers three distinct modes: Text Interview (typed responses), Voice Interview (speech-to-text dictation & voice question reader), and Video Interview (live webcam stream with real-time speech transcription).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" style="background: var(--bg-surface); border-t: 1px solid var(--border-color); padding: 3rem 1.5rem 2rem 1.5rem;">
+  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+    <div>
+      <a href="{{ url_for('main.index') }}" class="brand-logo-container" style="margin-bottom: 0.85rem;">
+        <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="InterviewAI Logo" class="brand-logo-icon">
+        <div class="brand-logo-text">
+          <span class="brand-logo-title">Interview<span class="ai-gradient">AI</span></span>
+          <span class="brand-logo-tagline">Prepare • Practice • Perform</span>
+        </div>
+      </a>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+        Premium AI Interview Preparation Platform powered by Gemini AI, HTML5 MediaStream, and Web Speech API.
+      </p>
+    </div>
+    <div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Platform</h4>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+        <li><a href="{{ url_for('interview.setup') }}">Start Mock Interview</a></li>
+        <li><a href="{{ url_for('analyzers.resume_analyzer') }}">Resume ATS Audit</a></li>
+        <li><a href="{{ url_for('analyzers.jd_analyzer') }}">Job Description Matcher</a></li>
+        <li><a href="{{ url_for('reports_bp.list_reports') }}">Evaluation Reports</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Account</h4>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+        <li><a href="{{ url_for('auth.register') }}">Create Account</a></li>
+        <li><a href="{{ url_for('auth.google_login') }}">Continue with Google</a></li>
+        <li><a href="{{ url_for('dashboard.profile') }}">My Profile</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="max-width: 1100px; margin: 0 auto; border-top: 1px solid var(--border-color); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <p style="font-size: 0.8rem; color: var(--text-muted);">© 2026 InterviewAI Inc. All rights reserved.</p>
+    <div style="display: flex; gap: 1rem; font-size: 1.1rem; color: var(--text-muted);">
+      <i class="fab fa-github" style="cursor: pointer;"></i>
+      <i class="fab fa-twitter" style="cursor: pointer;"></i>
+      <i class="fab fa-linkedin" style="cursor: pointer;"></i>
+    </div>
+  </div>
 </footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFaq(card) {
+  const p = card.querySelector('p');
+  const icon = card.querySelector('.fa-chevron-down, .fa-chevron-up');
+  if (p.style.display === 'none' || !p.style.display) {
+    p.style.display = 'block';
+    if (icon) icon.className = 'fas fa-chevron-up text-primary';
+  } else {
+    p.style.display = 'none';
+    if (icon) icon.className = 'fas fa-chevron-down text-muted';
+  }
+}
+</script>
 {% endblock %}

@@ -7,7 +7,7 @@ from services.gemini_service import GeminiService
 
 class InterviewService:
     @staticmethod
-    def create_interview(user_id, role, difficulty, interview_type, count=5, use_ai=True):
+    def create_interview(user_id, role, difficulty, interview_type, count=5, use_ai=True, mode='text'):
         """
         Generates a new interview record populated with non-repeating questions
         selected from Gemini AI or question bank.
@@ -58,6 +58,7 @@ class InterviewService:
             role=role,
             difficulty=difficulty,
             interview_type=interview_type,
+            mode=mode if mode in ['text', 'voice', 'video'] else 'text',
             total_questions=len(selected_questions),
             start_time=datetime.utcnow(),
             status='in_progress',

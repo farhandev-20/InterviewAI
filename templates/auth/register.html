@@ -6,9 +6,12 @@
 <div class="auth-wrapper">
   <div class="auth-card">
     <div class="auth-header">
-      <a href="{{ url_for('main.index') }}" class="logo" style="justify-content: center;">
-        <i class="fas fa-brain"></i>
-        <span>InterviewAI</span>
+      <a href="{{ url_for('main.index') }}" class="brand-logo-container" style="justify-content: center; margin-bottom: 1rem;">
+        <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="InterviewAI Logo" class="brand-logo-icon" style="width: 44px; height: 44px;">
+        <div class="brand-logo-text" style="align-items: flex-start;">
+          <span class="brand-logo-title" style="font-size: 1.6rem;">Interview<span class="ai-gradient">AI</span></span>
+          <span class="brand-logo-tagline">Prepare • Practice • Perform</span>
+        </div>
       </a>
       <h2>Create Your Account</h2>
       <p>Start your AI-powered interview preparation journey</p>
@@ -60,6 +63,16 @@
       <button type="submit" class="btn btn-primary w-100" style="width: 100%; padding: 0.85rem; margin-top: 0.5rem;">
         Create Free Account <i class="fas fa-arrow-right"></i>
       </button>
+
+      <div style="text-align:center; margin:20px 0;">
+        <p style="color: var(--text-muted); font-size: 0.85rem;">OR</p>
+        <a href="{{ url_for('auth.google_login') }}"
+           class="btn btn-light"
+           style="width:100%; border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; gap:10px; padding: 0.75rem; border-radius: 0.75rem;">
+            <img src="https://developers.google.com/identity/images/g-logo.png" width="20" alt="Google Logo">
+            <span>Continue with Google</span>
+        </a>
+      </div>
     </form>
 
     <div class="auth-footer">

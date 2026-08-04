@@ -5,8 +5,13 @@
   <!-- Sidebar Navigation -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-      <i class="fas fa-brain"></i>
-      <span>InterviewAI</span>
+      <a href="{{ url_for('dashboard.index') }}" class="brand-logo-container">
+        <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="InterviewAI Logo" class="brand-logo-icon">
+        <div class="brand-logo-text">
+          <span class="brand-logo-title">Interview<span class="ai-gradient">AI</span></span>
+          <span class="brand-logo-tagline">Prepare • Practice • Perform</span>
+        </div>
+      </a>
     </div>
 
     <ul class="sidebar-menu">

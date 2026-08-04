@@ -10,7 +10,8 @@
 
 :root {
   /* Font Family */
-  --font-main: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-main: 'Plus Jakarta Sans', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-tagline: 'Manrope', sans-serif;
   --transition-speed: 0.25s;
   --transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -22,19 +23,19 @@
   --bg-surface-hover: #182033;
   --bg-surface-elevated: #1a233a;
   --border-color: rgba(255, 255, 255, 0.08);
-  --border-focus: #6366f1;
+  --border-focus: #6D5EF8;
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --text-inverse: #090d16;
 
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --primary-glow: rgba(99, 102, 241, 0.35);
+  --primary: #6D5EF8;
+  --primary-hover: #5b4ce8;
+  --primary-gradient: linear-gradient(135deg, #6D5EF8 0%, #8B5CF6 100%);
+  --primary-glow: rgba(109, 94, 248, 0.35);
 
-  --accent-purple: #a855f7;
+  --accent-purple: #8B5CF6;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
@@ -217,9 +218,58 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .badge-primary {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(109, 94, 248, 0.15);
   color: var(--primary);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(109, 94, 248, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   BRAND LOGO STYLES
+   -------------------------------------------------------------------------- */
+.brand-logo-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.brand-logo-icon {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px var(--primary-glow));
+}
+
+.brand-logo-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-logo-title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand-logo-text .ai-gradient {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-logo-tagline {
+  font-family: var(--font-tagline);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 0.15rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -1044,5 +1094,169 @@ h1, h2, h3, h4, h5, h6 {
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   VIDEO & VOICE INTERVIEW ENHANCEMENTS & GLASSMORPHISM STYLES
+   ========================================================================== */
+.webcam-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #0b0f19;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--card-shadow);
+}
+
+.webcam-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.webcam-overlay-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 2rem;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 0.825rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.live-transcript-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+  padding: 1rem;
+  min-height: 110px;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  backdrop-filter: blur(6px);
+}
+
+.mode-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.mode-card {
+  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+  position: relative;
+}
+
+.mode-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 12px 24px -6px var(--primary-glow);
+}
+
+.mode-card.active {
+  border-color: var(--primary);
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.mode-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto 0.75rem auto;
+}
+
+.audio-wave-bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 30px;
+}
+
+.audio-bar {
+  width: 4px;
+  height: 8px;
+  background-color: var(--primary);
+  border-radius: 2px;
+  transition: height 0.15s ease;
+}
+
+.audio-wave-bars.active .audio-bar {
+  animation: wave-anim 0.8s ease-in-out infinite alternate;
+}
+
+.audio-wave-bars.active .audio-bar:nth-child(1) { animation-delay: 0.1s; }
+.audio-wave-bars.active .audio-bar:nth-child(2) { animation-delay: 0.3s; }
+.audio-wave-bars.active .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+.audio-wave-bars.active .audio-bar:nth-child(4) { animation-delay: 0.4s; }
+.audio-wave-bars.active .audio-bar:nth-child(5) { animation-delay: 0.15s; }
+
+@keyframes wave-anim {
+  0% { height: 6px; }
+  100% { height: 26px; }
+}
+
+@media print {
+  .sidebar, .navbar, .btn-print-hide, footer, .menu-toggle {
+    display: none !important;
+  }
+  .main-wrapper {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .card, .glass-panel {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    background: #fff !important;
   }
 }

@@ -449,3 +449,34 @@ class GeminiService:
             "certifications": "Full Stack Software Development Certification",
             "tools": "Git, VS Code, SQLite, Postman, Docker"
         }
+
+    @staticmethod
+    def generate_followup_question(question_text, user_answer, role="Software Engineer", difficulty="Medium"):
+        """Generates a dynamic follow-up question based on the candidate's answer."""
+        if not user_answer or len(user_answer.strip()) == 0:
+            return {
+                "followup_question": f"Could you elaborate on your experience with {role} concepts?",
+                "context": "Prompting for initial answer details"
+            }
+
+        prompt = f"""
+        Role: {role}
+        Difficulty: {difficulty}
+        Original Question: "{question_text}"
+        Candidate Answer: "{user_answer}"
+
+        Generate a dynamic, relevant follow-up question probing deeper into their response.
+        Return JSON:
+        {{
+            "followup_question": "Follow-up question string...",
+            "context": "Reasoning/topic focus of this follow-up..."
+        }}
+        """
+        res = GeminiService._call_gemini_api(prompt, json_mode=True)
+        if res and isinstance(res, dict) and "followup_question" in res:
+            return res
+
+        return {
+            "followup_question": f"That's an interesting approach. How would you handle scaling or edge cases in that implementation for a production environment?",
+            "context": "Probing performance and scalability considerations"
+        }

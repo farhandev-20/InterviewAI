@@ -16,6 +16,7 @@ def setup():
         role = request.form.get('role', 'Python Developer')
         difficulty = request.form.get('difficulty', 'Medium')
         interview_type = request.form.get('interview_type', 'Technical')
+        mode = request.form.get('mode', 'text')
         count = request.form.get('count', 5)
         use_resume = True if request.form.get('use_resume') else False
 
@@ -31,7 +32,8 @@ def setup():
                 difficulty=difficulty,
                 interview_type=interview_type,
                 count=count,
-                use_ai=False
+                use_ai=False,
+                mode=mode
             )
             # Replace questions with personalized resume questions
             Question.query.filter_by(interview_id=interview.id).delete()
@@ -55,7 +57,8 @@ def setup():
                 difficulty=difficulty,
                 interview_type=interview_type,
                 count=count,
-                use_ai=True
+                use_ai=True,
+                mode=mode
             )
 
         flash('AI Interview session initialized! Good luck.', 'success')
@@ -173,6 +176,25 @@ def save_answer_ajax(interview_id):
         })
 
     return jsonify({'status': 'error', 'message': 'Invalid question ID'}), 400
+
+@interview_bp.route('/<int:interview_id>/follow-up', methods=['POST'])
+@login_required
+def generate_followup(interview_id):
+    interview = InterviewService.get_interview_by_id(interview_id)
+    if not interview or interview.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+
+    data = request.get_json() or {}
+    question_text = data.get('question_text', '')
+    user_answer = data.get('answer', '')
+
+    result = GeminiService.generate_followup_question(
+        question_text=question_text,
+        user_answer=user_answer,
+        role=interview.role,
+        difficulty=interview.difficulty
+    )
+    return jsonify({'status': 'success', 'followup': result.get('followup_question'), 'context': result.get('context')})
 
 @interview_bp.route('/<int:interview_id>/summary')
 @login_required
