@@ -177,6 +177,38 @@ def save_answer_ajax(interview_id):
 
     return jsonify({'status': 'error', 'message': 'Invalid question ID'}), 400
 
+@interview_bp.route('/<int:interview_id>/turn', methods=['POST'])
+@login_required
+def process_turn_ajax(interview_id):
+    """
+    Automated turn processor: Evaluates candidate answer, dynamically adapts difficulty,
+    generates next adaptive question, and updates state.
+    """
+    interview = InterviewService.get_interview_by_id(interview_id)
+    if not interview or interview.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+
+    data = request.get_json() or {}
+    question_id = data.get('question_id')
+    answer_text = data.get('answer', '')
+    time_taken = data.get('time_taken', 0)
+
+    if not question_id:
+        return jsonify({'status': 'error', 'message': 'Missing question_id'}), 400
+
+    result = InterviewService.process_turn(
+        interview_id=interview.id,
+        question_id=question_id,
+        answer_text=answer_text,
+        time_taken=time_taken
+    )
+
+    if result.get('completed'):
+        result['redirect_url'] = url_for('interview.report', interview_id=interview.id)
+
+    return jsonify(result)
+
+
 @interview_bp.route('/<int:interview_id>/follow-up', methods=['POST'])
 @login_required
 def generate_followup(interview_id):

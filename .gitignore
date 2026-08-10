@@ -40,3 +40,15 @@ ENV/
 # Ignore uploads and instance configs (optional for this project)
 instance/
 uploads/
+
+__pycache__/
+*.pyc
+.env
+.env.local
+
+
+__pycache__/
+*.pyc
+.env
+.env.local
+

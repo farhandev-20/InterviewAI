@@ -480,3 +480,146 @@ class GeminiService:
             "followup_question": f"That's an interesting approach. How would you handle scaling or edge cases in that implementation for a production environment?",
             "context": "Probing performance and scalability considerations"
         }
+
+    @staticmethod
+    def generate_adaptive_interview_question(
+        role="Software Engineer",
+        difficulty="Medium",
+        question_number=1,
+        total_questions=10,
+        interview_stage="Technical Knowledge",
+        previous_history=None,
+        candidate_profile="",
+        last_answer="",
+        last_score=75.0
+    ):
+        """
+        Generates a context-aware, adaptive next interview question dynamically.
+        Extracts skills, tools, and projects mentioned by the candidate, adapts difficulty,
+        and progresses through structured interview stages like an authentic human HR/Tech Interviewer.
+        """
+        if previous_history is None:
+            previous_history = []
+
+        history_summary = []
+        for h in previous_history[-3:]:  # Last 3 Q&As for compact context
+            q_text = h.get('question', '')
+            a_text = (h.get('answer', '') or '')[:250]
+            score = h.get('score', 75)
+            history_summary.append(f"Q: {q_text}\nA: {a_text}\nScore: {score}%")
+        history_str = "\n---\n".join(history_summary) if history_summary else "None yet (Opening Question)"
+
+        prompt = f"""
+        You are an elite, highly engaging AI HR and Technical Interviewer conducting a dynamic live interview.
+        Target Role: {role}
+        Interview Progress: Question {question_number} of {total_questions}
+        Current Stage: {interview_stage}
+        Current Difficulty: {difficulty}
+        Candidate Resume/Profile Context: "{candidate_profile[:1200]}"
+        
+        Recent Conversation History:
+        {history_str}
+        
+        Candidate's Most Recent Answer: "{last_answer[:500]}"
+        Most Recent Answer Score: {last_score}%
+
+        CORE INSTRUCTIONS:
+        1. Act like a real human HR & Technical Interviewer who actively listens to the candidate.
+        2. EXPLICITLY ANCHOR TO THE CANDIDATE'S WORDS: If the candidate mentioned specific technologies, tools, algorithms, or projects in their answer (e.g. "I worked on Python and machine learning projects"), your next question MUST directly reference what they said (e.g. "You mentioned machine learning projects. Can you explain one of those projects and the algorithm you used?").
+        3. PROGRESS THE INTERVIEW STAGE:
+           - Stage 1 (Intro): Ask about background, journey, and technical focus.
+           - Stage 2 (Technical Fundamentals): Probe deeper into languages/tools they mentioned.
+           - Stage 3 (Project & Architecture): Ask about system trade-offs, architecture, and database design.
+           - Stage 4 (Problem Solving & Edge Cases): Ask about optimization, scalability, and production debugging.
+           - Stage 5 (Behavioral & Leadership): Ask about team collaboration, conflict resolution, or deadlines.
+        4. DYNAMIC DIFFICULTY ADJUSTMENT:
+           - If their last score was low (< 60%), ask a foundational or clarifying question.
+           - If their last score was high (>= 80%), escalate to architectural trade-offs, distributed systems, or performance edge cases.
+        5. Provide a natural, empathetic transition phrase (e.g. "That's a great example.", "Interesting approach with Python.", "Understood, let's explore that deeper.").
+
+        Return JSON object with keys:
+        - "question": string (the exact adaptive question for the AI to speak aloud)
+        - "transition_phrase": string (conversational opening reaction)
+        - "topic": string (e.g. Project Deep-Dive, Machine Learning Algorithms, System Scalability)
+        - "difficulty": string ("{difficulty}")
+        - "sample_answer": string (concise model solution advice)
+        - "detected_skills": array of strings (extracted technologies/skills from candidate's answer)
+        """
+
+        res = GeminiService._call_gemini_api(prompt, json_mode=True)
+        if res and isinstance(res, dict) and "question" in res and len(res["question"].strip()) > 0:
+            return res
+
+        # Smart Entity-Driven Contextual Fallback Engine
+        ans_lower = (last_answer or "").lower()
+        detected_skills = []
+
+        # 1. Machine Learning & AI detection
+        if any(w in ans_lower for w in ["machine learning", "ml", "deep learning", "pytorch", "tensorflow", "neural network", "ai", "transformer", "nlp", "computer vision"]):
+            detected_skills.extend(["Machine Learning", "Model Evaluation"])
+            return {
+                "question": "You mentioned working on machine learning projects. Can you explain one of those projects in detail, including the algorithm you selected and how you evaluated its performance?",
+                "transition_phrase": "That sounds like a fascinating area of work.",
+                "topic": "Machine Learning Projects & Algorithms",
+                "difficulty": difficulty,
+                "sample_answer": "Describe problem framing, dataset preprocessing, algorithm selection trade-offs, and metrics like precision/recall or F1-score.",
+                "detected_skills": detected_skills
+            }
+
+        # 2. Python & Backend Web Frameworks detection
+        if any(w in ans_lower for w in ["python", "django", "flask", "fastapi", "backend", "api", "rest"]):
+            detected_skills.extend(["Python", "Backend APIs"])
+            return {
+                "question": "You brought up your experience with Python and backend development. How do you design your APIs for high concurrency, and how do you handle exception logging and data validation?",
+                "transition_phrase": "Python is a core technology for our backend stack.",
+                "topic": "Python Backend Architecture & APIs",
+                "difficulty": difficulty,
+                "sample_answer": "Discuss asynchronous request handling, schema validation with Pydantic, structured logging, and HTTP error code standards.",
+                "detected_skills": detected_skills
+            }
+
+        # 3. Frontend & UI detection
+        if any(w in ans_lower for w in ["react", "vue", "angular", "frontend", "javascript", "typescript", "css", "html", "next.js", "nextjs"]):
+            detected_skills.extend(["Frontend", "UI Architecture"])
+            return {
+                "question": "I see you have hands-on frontend experience. How do you manage component state and ensure optimal rendering performance across complex user interfaces?",
+                "transition_phrase": "User experience and responsive design are crucial.",
+                "topic": "Frontend State Management & Performance",
+                "difficulty": difficulty,
+                "sample_answer": "Explain unidirectional data flow, memoization techniques, code splitting, and lazy loading strategies.",
+                "detected_skills": detected_skills
+            }
+
+        # 4. Database & Cloud / DevOps detection
+        if any(w in ans_lower for w in ["sql", "postgresql", "mysql", "mongodb", "redis", "database", "docker", "kubernetes", "aws"]):
+            detected_skills.extend(["Database Design", "Cloud Infrastructure"])
+            return {
+                "question": "You mentioned working with databases and infrastructure. How do you approach query optimization, indexing strategies, and database connection pooling in production?",
+                "transition_phrase": "Solid database fundamentals are essential for this role.",
+                "topic": "Database Indexing & Infrastructure",
+                "difficulty": difficulty,
+                "sample_answer": "Highlight B-tree indexes, analyzing EXPLAIN query execution plans, connection pool limits, and caching layers.",
+                "detected_skills": detected_skills
+            }
+
+        # 5. General Stage-Driven Question Progression
+        stage_questions = {
+            1: (f"Could you start by introducing yourself, your technical background, and what inspired you to pursue a career as a {role}?", "Hello and welcome! Let's get to know each other."),
+            2: (f"Based on your background for the {role} position, what do you consider to be the most critical technical skill or principle in your day-to-day workflow?", "Thanks for sharing your background."),
+            3: ("Tell me about a challenging project you built recently. What were the key architectural decisions you made and what trade-offs did you encounter?", "Let's dive into your practical project experience."),
+            4: ("Describe a situation where you had to diagnose and resolve a severe performance bottleneck or production bug. How did you identify the root cause?", "Problem solving is a vital part of engineering."),
+            5: ("In a cross-functional team, how do you handle situations where product requirements conflict with technical debt or deadline constraints?", "Collaboration and communication are key to our culture."),
+        }
+
+        q_pair = stage_questions.get(question_number, (f"Looking forward, how do you keep your technical skills sharp as a {role}, and what architectural patterns are you most excited to master next?", "Thank you for that thoughtful response."))
+
+        return {
+            "question": q_pair[0],
+            "transition_phrase": q_pair[1],
+            "topic": interview_stage,
+            "difficulty": difficulty,
+            "sample_answer": "Structured explanation following the STAR framework (Situation, Task, Action, Result).",
+            "detected_skills": [role, "Engineering Principles"]
+        }
+
+

@@ -1,10 +1,14 @@
 /* ==========================================================================
    Live AI Voice Interview Runner Engine
-   Speech Synthesis (Auto-read/Replay/Mute), Speech Recognition (Mic),
-   Pause/Resume Controls, and Countdown Timer
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // If interview.js is active on this page, let interview.js drive the state machine
+  if (document.getElementById('interview-id')) {
+    initExitModal();
+    return;
+  }
+
   const timerElement = document.getElementById('timer-display');
   const timerContainer = document.getElementById('timer-container');
   const answerTextarea = document.getElementById('answer');
@@ -13,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const actionInput = document.getElementById('action-input');
   const timeTakenInput = document.getElementById('time-taken-input');
   const questionTextElement = document.getElementById('question-text');
+
 
   // Config: 2 minutes per question (120 seconds)
   const QUESTION_TIMEOUT = 120;
@@ -208,26 +213,34 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 6. Exit Confirmation Modal
+  initExitModal();
+});
+
+function initExitModal() {
   const exitBtn = document.getElementById('exit-interview-btn');
   const exitModal = document.getElementById('exit-modal');
   const cancelExitBtn = document.getElementById('cancel-exit-btn');
   const confirmExitBtn = document.getElementById('confirm-exit-btn');
 
   if (exitBtn && exitModal) {
-    exitBtn.addEventListener('click', () => {
+    exitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       exitModal.classList.add('active');
     });
 
     if (cancelExitBtn) {
-      cancelExitBtn.addEventListener('click', () => {
+      cancelExitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         exitModal.classList.remove('active');
       });
     }
 
     if (confirmExitBtn) {
-      confirmExitBtn.addEventListener('click', () => {
+      confirmExitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         window.location.href = confirmExitBtn.getAttribute('data-href') || '/dashboard';
       });
     }
   }
-});
+}
+

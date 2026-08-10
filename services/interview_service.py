@@ -145,6 +145,165 @@ class InterviewService:
         return answer, feedback
 
     @staticmethod
+    def process_turn(interview_id, question_id, answer_text, time_taken=0):
+        """
+        Executes a complete automated interview turn:
+        1. Evaluates candidate answer via Gemini AI and persists feedback.
+        2. Adjusts dynamic difficulty and interview stage.
+        3. Generates the next context-aware adaptive question referencing candidate response & resume.
+        4. Returns structured JSON for the frontend state machine.
+        """
+        interview = InterviewService.get_interview_by_id(interview_id)
+        if not interview:
+            return {'status': 'error', 'message': 'Interview not found'}
+
+        question = Question.query.get(int(question_id))
+        if not question or question.interview_id != interview.id:
+            return {'status': 'error', 'message': 'Invalid question'}
+
+        # 1. Save and evaluate current answer
+        answer, feedback = InterviewService.save_answer_and_evaluate(
+            question_id=question.id,
+            answer_text=answer_text,
+            time_taken=time_taken,
+            role=interview.role,
+            difficulty=interview.difficulty
+        )
+
+        current_q_num = question.order_number
+        total_q = interview.total_questions
+
+        # 2. Check if final question reached
+        if current_q_num >= total_q:
+            InterviewService.complete_interview(interview.id)
+            return {
+                'status': 'success',
+                'completed': True,
+                'current_q_num': current_q_num,
+                'total_questions': total_q,
+                'overall_score': feedback.overall_score if feedback else 75.0,
+                'feedback': {
+                    'overall_score': feedback.overall_score if feedback else 75.0,
+                    'technical_score': feedback.technical_score if feedback else 75.0,
+                    'communication_score': feedback.communication_score if feedback else 75.0,
+                    'confidence_score': feedback.confidence_score if feedback else 75.0,
+                    'relevance_score': feedback.relevance_score if feedback else 75.0,
+                    'strengths': feedback.strengths if feedback else '',
+                    'weaknesses': feedback.weaknesses if feedback else ''
+                }
+            }
+
+        # 3. Dynamic difficulty progression
+        diff_levels = ["Easy", "Medium", "Hard", "Advanced"]
+        curr_diff = interview.difficulty
+        if curr_diff not in diff_levels:
+            curr_diff = "Medium"
+        diff_idx = diff_levels.index(curr_diff)
+
+        last_score = feedback.overall_score if feedback else 75.0
+        if last_score >= 80 and diff_idx < len(diff_levels) - 1:
+            next_diff = diff_levels[diff_idx + 1]
+        elif last_score < 55 and diff_idx > 0:
+            next_diff = diff_levels[diff_idx - 1]
+        else:
+            next_diff = curr_diff
+
+        interview.difficulty = next_diff
+        db.session.commit()
+
+        # 4. Determine stage progression
+        next_q_num = current_q_num + 1
+        stages = [
+            (1, "Introduction & Background"),
+            (2, "Technical Knowledge & Concepts"),
+            (3, "Technical Deep-Dive"),
+            (4, "Project Experience & Architecture"),
+            (5, "System Design & Edge Cases"),
+            (6, "Problem Solving & Analytical Thinking"),
+            (7, "Scenario-Based Troubleshooting"),
+            (8, "Behavioral & Conflict Management"),
+            (9, "Leadership & Teamwork"),
+            (10, "Career Aspirations & Wrap-up")
+        ]
+        stage_name = "Technical Knowledge"
+        for q_idx, s_name in stages:
+            if next_q_num == q_idx:
+                stage_name = s_name
+                break
+
+        # 5. Gather history and candidate resume
+        from services.resume_service import ResumeService
+        latest_resume = ResumeService.get_latest_user_resume(interview.user_id)
+        resume_text = latest_resume.raw_text if latest_resume else ""
+
+        history = []
+        for q in interview.questions:
+            if q.order_number <= current_q_num:
+                history.append({
+                    'question': q.question_text,
+                    'answer': q.get_user_answer() or '',
+                    'score': q.ai_feedback.overall_score if q.ai_feedback else 75.0
+                })
+
+        # 6. Generate adaptive next question
+        adaptive_data = GeminiService.generate_adaptive_interview_question(
+            role=interview.role,
+            difficulty=next_diff,
+            question_number=next_q_num,
+            total_questions=total_q,
+            interview_stage=stage_name,
+            previous_history=history,
+            candidate_profile=resume_text,
+            last_answer=answer_text,
+            last_score=last_score
+        )
+
+        # 7. Update or create the next Question in database
+        next_question = Question.query.filter_by(interview_id=interview.id, order_number=next_q_num).first()
+        if not next_question:
+            next_question = Question(
+                interview_id=interview.id,
+                question_text=adaptive_data.get('question'),
+                topic=adaptive_data.get('topic', stage_name),
+                difficulty=next_diff,
+                sample_answer=adaptive_data.get('sample_answer', 'Model solution'),
+                order_number=next_q_num
+            )
+            db.session.add(next_question)
+        else:
+            next_question.question_text = adaptive_data.get('question')
+            next_question.topic = adaptive_data.get('topic', stage_name)
+            next_question.difficulty = next_diff
+            next_question.sample_answer = adaptive_data.get('sample_answer', 'Model solution')
+
+        db.session.commit()
+
+        return {
+            'status': 'success',
+            'completed': False,
+            'current_q_num': next_q_num,
+            'total_questions': total_q,
+            'transition_phrase': adaptive_data.get('transition_phrase', 'Thank you. Let us proceed to the next question.'),
+            'next_question': {
+                'id': next_question.id,
+                'order_number': next_question.order_number,
+                'question_text': next_question.question_text,
+                'topic': next_question.topic,
+                'difficulty': next_question.difficulty
+            },
+            'evaluation': {
+                'overall_score': feedback.overall_score if feedback else 75.0,
+                'technical_score': feedback.technical_score if feedback else 75.0,
+                'communication_score': feedback.communication_score if feedback else 75.0,
+                'confidence_score': feedback.confidence_score if feedback else 75.0,
+                'relevance_score': feedback.relevance_score if feedback else 75.0,
+                'strengths': feedback.strengths if feedback else '',
+                'weaknesses': feedback.weaknesses if feedback else ''
+            }
+        }
+
+
+    @staticmethod
     def complete_interview(interview_id):
         """
         Marks interview as completed and calculates final overall score from AI feedbacks.

@@ -90,17 +90,23 @@ def google_login():
         flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
         return redirect(url_for('dashboard.index'))
 
-    client_id = os.getenv('GOOGLE_CLIENT_ID')
-    if client_id and client_id != 'your_google_client_id_here':
+    client_id = os.getenv('GOOGLE_CLIENT_ID', '').strip()
+    dummy_ids = ('your_google_client_id_here', '171863369615-4lg7lt8o6f1d1cno1opv4metvbhnp51v.apps.googleusercontent.com')
+    
+    if client_id and client_id not in dummy_ids and not client_id.startswith('your_'):
+        import urllib.parse
         redirect_uri = os.getenv('GOOGLE_REDIRECT_URI') or url_for('auth.google_callback', _external=True)
-        google_auth_url = (
-            "https://accounts.google.com/o/oauth2/v2/auth?"
-            f"client_id={client_id}&redirect_uri={redirect_uri}&"
-            "response_type=code&scope=openid%20email%20profile"
-        )
+        params = {
+            'client_id': client_id,
+            'redirect_uri': redirect_uri,
+            'response_type': 'code',
+            'scope': 'openid email profile',
+            'prompt': 'select_account'
+        }
+        google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
         return redirect(google_auth_url)
 
-    # Local development simulation fallback for smooth testing
+    # Local development simulation fallback for smooth testing without OAuth errors
     user = UserService.create_or_get_google_user(
         email="alex.candidate@gmail.com",
         full_name="Alex Candidate",

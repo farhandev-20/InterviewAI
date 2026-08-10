@@ -36,6 +36,14 @@ def test_interviewai_phase6_upgrades():
         assert res.status_code in (302, 200), f"Google login endpoint failed with status {res.status_code}"
         print("[OK] Continue with Google Authentication endpoint verified.")
 
+        # Test prompt=select_account parameter when GOOGLE_CLIENT_ID is set
+        os.environ['GOOGLE_CLIENT_ID'] = 'test_google_client_id_123'
+        res_oauth = client.get('/google_login', follow_redirects=False)
+        assert res_oauth.status_code == 302
+        assert 'prompt=select_account' in res_oauth.location, f"Expected prompt=select_account in redirect location: {res_oauth.location}"
+        del os.environ['GOOGLE_CLIENT_ID']
+        print("[OK] Google Account Chooser (prompt=select_account) parameter verified.")
+
         # 2. Test Interview Creation for 3 Modes (Text, Voice, Video)
         with app.app_context():
             inv_text = InterviewService.create_interview(

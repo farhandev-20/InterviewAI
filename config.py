@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Load environment variables from .env
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(os.path.join(BASE_DIR, '.env'), override=True)
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_fallback_secret_key_8492749281739')
