@@ -1,20 +1,31 @@
-# Byte-compiled / optimized / DLL files
+# Environment variables & secrets (NEVER commit to GitHub)
+.env
+.env.local
+.env.*
+!.env.example
+
+# Python bytecode & cache
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
-# C extensions
-*.so
+# Database files
+*.db
+*.sqlite3
+interviewai.db
+instance/
 
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-.eggs/
+# Node modules
+node_modules/
 
-# Installer logs
-pip-wheel-metadata/
+# User Uploads (keep directory structure, ignore user files)
+static/uploads/resumes/*
+static/uploads/avatars/*
+!static/uploads/resumes/.gitkeep
+!static/uploads/avatars/.gitkeep
+uploads/
 
 # Virtual environments
 venv/
@@ -22,33 +33,12 @@ env/
 .venv/
 ENV/
 
-# Environment variables
-.env
-.env.*
-
-# pytest
-.pytest_cache/
-
-# Editor and OS files
+# IDE & OS files
 .vscode/
+.idea/
 .DS_Store
 *.swp
 
-# Python bytecode
-*.pyc
-
-# Ignore uploads and instance configs (optional for this project)
-instance/
-uploads/
-
-__pycache__/
-*.pyc
-.env
-.env.local
-
-
-__pycache__/
-*.pyc
-.env
-.env.local
-
+# Testing & logs
+.pytest_cache/
+*.log
