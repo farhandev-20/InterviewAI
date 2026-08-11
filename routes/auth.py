@@ -78,6 +78,7 @@ def login():
 def google_login():
     """Redirect to Google OAuth or development simulation."""
     import os
+    import urllib.parse
     
     # Check if user requested demo/local simulation mode
     if request.args.get('demo') == '1':
@@ -90,11 +91,10 @@ def google_login():
         flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
         return redirect(url_for('dashboard.index'))
 
-    client_id = os.getenv('GOOGLE_CLIENT_ID', '').strip()
+    client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
     dummy_ids = ('your_google_client_id_here', '171863369615-4lg7lt8o6f1d1cno1opv4metvbhnp51v.apps.googleusercontent.com')
     
     if client_id and client_id not in dummy_ids and not client_id.startswith('your_'):
-        import urllib.parse
         redirect_uri = os.getenv('GOOGLE_REDIRECT_URI') or url_for('auth.google_callback', _external=True)
         params = {
             'client_id': client_id,
@@ -106,14 +106,14 @@ def google_login():
         google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
         return redirect(google_auth_url)
 
-    # Local development simulation fallback for smooth testing without OAuth errors
+    # Local development simulation fallback for smooth testing without OAuth credentials
     user = UserService.create_or_get_google_user(
         email="alex.candidate@gmail.com",
         full_name="Alex Candidate",
         google_id="google_sim_1029384756"
     )
     login_user(user, remember=True)
-    flash(f'Signed in with Google successfully! Welcome, {user.full_name}.', 'success')
+    flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
     return redirect(url_for('dashboard.index'))
 
 @auth_bp.route('/google/callback')
@@ -123,16 +123,17 @@ def google_callback():
     import json
     import urllib.request
     import urllib.parse
+    import urllib.error
 
     code = request.args.get('code')
-    client_id = os.getenv('GOOGLE_CLIENT_ID')
-    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+    client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
+    client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
+    redirect_uri = (os.getenv('GOOGLE_REDIRECT_URI') or '').strip() or url_for('auth.google_callback', _external=True)
 
     if code and client_id and client_secret:
         try:
             token_url = "https://oauth2.googleapis.com/token"
-            redirect_uri = os.getenv('GOOGLE_REDIRECT_URI') or url_for('auth.google_callback', _external=True)
-            data = urllib.parse.urlencode({
+            payload = urllib.parse.urlencode({
                 'code': code,
                 'client_id': client_id,
                 'client_secret': client_secret,
@@ -140,34 +141,52 @@ def google_callback():
                 'grant_type': 'authorization_code'
             }).encode('utf-8')
 
-            req = urllib.request.Request(token_url, data=data, method='POST')
-            with urllib.request.urlopen(req) as resp:
+            token_req = urllib.request.Request(
+                token_url,
+                data=payload,
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'User-Agent': 'InterviewAI-OAuth-Client/1.0'
+                },
+                method='POST'
+            )
+
+            with urllib.request.urlopen(token_req, timeout=15) as resp:
                 tokens = json.loads(resp.read().decode('utf-8'))
                 access_token = tokens.get('access_token')
 
             if access_token:
-                user_info_url = f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}"
-                with urllib.request.urlopen(user_info_url) as user_resp:
+                userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+                user_req = urllib.request.Request(
+                    userinfo_url,
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'User-Agent': 'InterviewAI-OAuth-Client/1.0'
+                    }
+                )
+                with urllib.request.urlopen(user_req, timeout=15) as user_resp:
                     info = json.loads(user_resp.read().decode('utf-8'))
                     email = info.get('email')
-                    name = info.get('name', 'Google User')
-                    g_id = info.get('id')
+                    name = info.get('name') or info.get('given_name') or 'Google User'
+                    g_id = info.get('sub') or info.get('id')
 
-                    user = UserService.create_or_get_google_user(email=email, full_name=name, google_id=g_id)
-                    login_user(user, remember=True)
-                    flash(f'Google authentication successful! Welcome, {user.full_name}.', 'success')
-                    return redirect(url_for('dashboard.index'))
+                    if email:
+                        user = UserService.create_or_get_google_user(email=email, full_name=name, google_id=g_id)
+                        login_user(user, remember=True)
+                        flash(f'Signed in as {user.full_name} ({user.email})!', 'success')
+                        return redirect(url_for('dashboard.index'))
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore') if hasattr(he, 'read') else ''
+            print(f"[Google OAuth HTTPError {he.code}] {he.reason}: {err_body}")
+            flash(f'Google authentication error: {he.reason}. Please try again.', 'danger')
+            return redirect(url_for('auth.login'))
         except Exception as e:
-            flash(f'Google login notice: {str(e)}. Proceeded with local account.', 'warning')
+            print(f"[Google OAuth Error] {e}")
+            flash(f'Google login error: {str(e)}', 'danger')
+            return redirect(url_for('auth.login'))
 
-    user = UserService.create_or_get_google_user(
-        email="alex.candidate@gmail.com",
-        full_name="Alex Candidate",
-        google_id="google_sim_1029384756"
-    )
-    login_user(user, remember=True)
-    flash(f'Signed in with Google! Welcome, {user.full_name}.', 'success')
-    return redirect(url_for('dashboard.index'))
+    flash('Google authentication was cancelled or credentials missing.', 'warning')
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/logout')
 @login_required
