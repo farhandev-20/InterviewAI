@@ -73,6 +73,22 @@ def login():
 
     return render_template('auth/login.html')
 
+def _get_google_redirect_uri():
+    """Dynamically determine the exact Google redirect URI based on current request."""
+    import os
+    env_uri = (os.getenv('GOOGLE_REDIRECT_URI') or '').strip()
+    current_host = request.host
+    is_live = ('localhost' not in current_host and '127.0.0.1' not in current_host)
+    
+    if is_live:
+        if env_uri and 'localhost' not in env_uri and '127.0.0.1' not in env_uri:
+            return env_uri
+        return f"https://{current_host}/google/callback"
+    
+    if env_uri:
+        return env_uri
+    return url_for('auth.google_callback', _external=True)
+
 @auth_bp.route('/google_login')
 @auth_bp.route('/google')
 def google_login():
@@ -95,7 +111,7 @@ def google_login():
     dummy_ids = ('your_google_client_id_here', '171863369615-4lg7lt8o6f1d1cno1opv4metvbhnp51v.apps.googleusercontent.com')
     
     if client_id and client_id not in dummy_ids and not client_id.startswith('your_'):
-        redirect_uri = os.getenv('GOOGLE_REDIRECT_URI') or url_for('auth.google_callback', _external=True)
+        redirect_uri = _get_google_redirect_uri()
         params = {
             'client_id': client_id,
             'redirect_uri': redirect_uri,
@@ -128,7 +144,7 @@ def google_callback():
     code = request.args.get('code')
     client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
     client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
-    redirect_uri = (os.getenv('GOOGLE_REDIRECT_URI') or '').strip() or url_for('auth.google_callback', _external=True)
+    redirect_uri = _get_google_redirect_uri()
 
     if code and client_id and client_secret:
         try:
