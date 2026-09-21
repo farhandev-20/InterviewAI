@@ -38,6 +38,10 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_fallback_secret_key_8492749281739')
     SQLALCHEMY_DATABASE_URI = get_database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
     
     # Upload Settings
     UPLOAD_FOLDER = get_upload_folder()

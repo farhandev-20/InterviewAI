@@ -5,14 +5,21 @@ from database.db import db
 from models import User
 import routes
 
+# Base directory for absolute paths
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
 
-    app = Flask(__name__)
-    app.config.from_object(config[config_name])
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(BASE_DIR, 'templates'),
+        static_folder=os.path.join(BASE_DIR, 'static')
+    )
+    app.config.from_object(config.get(config_name, config['default']))
 
-    # Enable Werkzeug ProxyFix for Cloudflare / Render reverse proxy HTTPS support
+    # Enable Werkzeug ProxyFix for Cloudflare / Render / Vercel reverse proxy HTTPS support
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
@@ -43,11 +50,11 @@ def create_app(config_name=None):
     app.register_error_handler(404, routes.page_not_found)
     app.register_error_handler(500, routes.internal_server_error)
 
-    # Create tables and run lightweight migrations
+    # Create tables and run lightweight migrations safely without blocking app start
     with app.app_context():
-        db.create_all()
-        from sqlalchemy import text, inspect
         try:
+            db.create_all()
+            from sqlalchemy import text, inspect
             inspector = inspect(db.engine)
             if 'users' in inspector.get_table_names():
                 user_cols = [c['name'] for c in inspector.get_columns('users')]
@@ -60,7 +67,7 @@ def create_app(config_name=None):
                     db.session.execute(text("ALTER TABLE interviews ADD COLUMN mode VARCHAR(50) DEFAULT 'text'"))
                     db.session.commit()
         except Exception as e:
-            print(f"[Database Migration Notice] {e}")
+            print(f"[Database Init/Migration Notice] {e}")
 
     return app
 
