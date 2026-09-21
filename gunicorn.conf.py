@@ -1,8 +1,11 @@
-# Gunicorn WSGI Server Production Configuration
+import os
 import multiprocessing
 
-bind = "0.0.0.0:5000"
-workers = multiprocessing.cpu_count() * 2 + 1
+# Bind dynamically to Railway / Cloud PORT or default to 5000
+port = os.getenv("PORT", "5000")
+bind = f"0.0.0.0:{port}"
+
+workers = max(multiprocessing.cpu_count(), 2)
 worker_class = "sync"
 timeout = 120
 keepalive = 5
