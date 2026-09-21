@@ -31,7 +31,10 @@ class User(UserMixin, db.Model):
     def update_last_login(self):
         """Record the login timestamp."""
         self.last_login = datetime.utcnow()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     def get_avatar_url(self):
         """Returns the avatar URL or default placeholder."""

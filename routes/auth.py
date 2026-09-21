@@ -96,41 +96,51 @@ def google_login():
     import os
     import urllib.parse
     
-    # Check if user requested demo/local simulation mode
-    if request.args.get('demo') == '1':
+    try:
+        # Check if user requested demo/local simulation mode
+        if request.args.get('demo') == '1':
+            user = UserService.create_or_get_google_user(
+                email="alex.candidate@gmail.com",
+                full_name="Alex Candidate",
+                google_id="google_sim_1029384756"
+            )
+            if user:
+                login_user(user, remember=True)
+                flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
+                return redirect(url_for('dashboard.index'))
+
+        client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
+        dummy_ids = ('your_google_client_id_here', '171863369615-4lg7lt8o6f1d1cno1opv4metvbhnp51v.apps.googleusercontent.com')
+        
+        if client_id and client_id not in dummy_ids and not client_id.startswith('your_'):
+            redirect_uri = _get_google_redirect_uri()
+            params = {
+                'client_id': client_id,
+                'redirect_uri': redirect_uri,
+                'response_type': 'code',
+                'scope': 'openid email profile',
+                'prompt': 'select_account'
+            }
+            google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+            return redirect(google_auth_url)
+
+        # Local simulation fallback when real OAuth credentials are not provided
         user = UserService.create_or_get_google_user(
             email="alex.candidate@gmail.com",
             full_name="Alex Candidate",
             google_id="google_sim_1029384756"
         )
-        login_user(user, remember=True)
-        flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
-        return redirect(url_for('dashboard.index'))
-
-    client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
-    dummy_ids = ('your_google_client_id_here', '171863369615-4lg7lt8o6f1d1cno1opv4metvbhnp51v.apps.googleusercontent.com')
-    
-    if client_id and client_id not in dummy_ids and not client_id.startswith('your_'):
-        redirect_uri = _get_google_redirect_uri()
-        params = {
-            'client_id': client_id,
-            'redirect_uri': redirect_uri,
-            'response_type': 'code',
-            'scope': 'openid email profile',
-            'prompt': 'select_account'
-        }
-        google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
-        return redirect(google_auth_url)
-
-    # Local development simulation fallback for smooth testing without OAuth credentials
-    user = UserService.create_or_get_google_user(
-        email="alex.candidate@gmail.com",
-        full_name="Alex Candidate",
-        google_id="google_sim_1029384756"
-    )
-    login_user(user, remember=True)
-    flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
-    return redirect(url_for('dashboard.index'))
+        if user:
+            login_user(user, remember=True)
+            flash(f'Signed in with Google! Welcome, {user.full_name}.', 'success')
+            return redirect(url_for('dashboard.index'))
+        else:
+            flash('Error logging in with Google. Please use email & password registration.', 'warning')
+            return redirect(url_for('auth.login'))
+    except Exception as e:
+        print(f"[Google Auth Exception] {e}")
+        flash(f'Authentication error: {str(e)}', 'danger')
+        return redirect(url_for('auth.login'))
 
 @auth_bp.route('/google/callback')
 def google_callback():

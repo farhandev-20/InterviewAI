@@ -3,6 +3,8 @@ from werkzeug.utils import secure_filename
 from database.db import db
 from models.user import User
 
+import time
+
 class UserService:
     @staticmethod
     def get_by_id(user_id):
@@ -37,9 +39,13 @@ class UserService:
         )
         user.set_password(password)
 
-        db.session.add(user)
-        db.session.commit()
-        return user, None
+        try:
+            db.session.add(user)
+            db.session.commit()
+            return user, None
+        except Exception as e:
+            db.session.rollback()
+            return None, f"Database error: {str(e)}"
 
     @staticmethod
     def authenticate_user(email, password):
@@ -56,27 +62,33 @@ class UserService:
     @staticmethod
     def create_or_get_google_user(email, full_name, google_id=None):
         """Authenticate or register user via Google OAuth while preserving existing accounts."""
-        email_clean = email.strip().lower()
-        user = UserService.get_by_email(email_clean)
-        if user:
-            if google_id and not user.google_id:
-                user.google_id = google_id
-            user.update_last_login()
-            db.session.commit()
-            return user
+        try:
+            email_clean = email.strip().lower()
+            user = UserService.get_by_email(email_clean)
+            if user:
+                if google_id and not user.google_id:
+                    user.google_id = google_id
+                    db.session.commit()
+                user.update_last_login()
+                return user
 
-        user = User(
-            full_name=full_name.strip() if full_name else "Google Candidate",
-            email=email_clean,
-            google_id=google_id or f"google_{int(os.path.getmtime(__file__))}",
-            target_role="Software Engineer",
-            skills="Python, Web Development, Problem Solving"
-        )
-        user.set_password(f"google_oauth_dummy_{int(os.path.getmtime(__file__))}")
-        db.session.add(user)
-        db.session.commit()
-        user.update_last_login()
-        return user
+            timestamp = int(time.time())
+            user = User(
+                full_name=full_name.strip() if full_name else "Google Candidate",
+                email=email_clean,
+                google_id=google_id or f"google_{timestamp}",
+                target_role="Software Engineer",
+                skills="Python, Web Development, Problem Solving"
+            )
+            user.set_password(f"google_oauth_dummy_{timestamp}")
+            db.session.add(user)
+            db.session.commit()
+            user.update_last_login()
+            return user
+        except Exception as e:
+            db.session.rollback()
+            print(f"[UserService.create_or_get_google_user Error] {e}")
+            return None
 
     @staticmethod
     def update_profile(user_id, full_name, email, target_role, skills, file_obj=None, upload_folder=None, allowed_extensions=None):
@@ -104,7 +116,7 @@ class UserService:
             if allowed_extensions and ext not in allowed_extensions:
                 return False, f"Invalid file format. Allowed extensions: {', '.join(allowed_extensions)}"
             
-            new_filename = f"user_{user.id}_{int(os.path.getmtime(__file__))}.{ext}"
+            new_filename = f"user_{user.id}_{int(time.time())}.{ext}"
             try:
                 if upload_folder:
                     os.makedirs(upload_folder, exist_ok=True)
@@ -114,5 +126,9 @@ class UserService:
             except Exception as e:
                 print(f"[Profile Photo Upload Notice] {e}")
 
-        db.session.commit()
-        return True, "Profile updated successfully."
+        try:
+            db.session.commit()
+            return True, "Profile updated successfully."
+        except Exception as e:
+            db.session.rollback()
+            return False, f"Database save error: {str(e)}"
