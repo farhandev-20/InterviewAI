@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from config import config_by_name as config
 from database.db import db
-from models import User
+import models
 import routes
 
 # Base directory for absolute paths

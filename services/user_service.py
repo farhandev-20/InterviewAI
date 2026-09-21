@@ -6,15 +6,21 @@ from models.user import User
 class UserService:
     @staticmethod
     def get_by_id(user_id):
-        """Retrieve user by ID."""
-        return User.query.get(int(user_id))
+        """Retrieve user by ID safely."""
+        try:
+            return User.query.get(int(user_id))
+        except Exception:
+            return None
 
     @staticmethod
     def get_by_email(email):
-        """Retrieve user by email (case-insensitive)."""
+        """Retrieve user by email (case-insensitive) safely."""
         if not email:
             return None
-        return User.query.filter(User.email.ilike(email.strip())).first()
+        try:
+            return User.query.filter(User.email.ilike(email.strip())).first()
+        except Exception:
+            return None
 
     @staticmethod
     def create_user(full_name, email, password, target_role="Full Stack Developer", skills="Python, SQL"):

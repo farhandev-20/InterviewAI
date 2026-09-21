@@ -22,7 +22,8 @@ def get_database_url():
     
     # In serverless environments like Vercel, root filesystem is read-only, so fallback SQLite to /tmp
     if os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME'):
-        return f'sqlite:///{os.path.join(tempfile.gettempdir(), "interviewai.db")}'
+        tmp_db = os.path.join(tempfile.gettempdir(), "interviewai.db").replace('\\', '/')
+        return f'sqlite:///{tmp_db}'
         
     return f'sqlite:///{os.path.join(BASE_DIR, "interviewai.db")}'
 
