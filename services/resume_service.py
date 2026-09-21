@@ -1,18 +1,38 @@
 import os
+import tempfile
 from werkzeug.utils import secure_filename
 from database.db import db
 from models.resume import Resume, ResumeAnalysis, JobDescription, ResumeJobMatch, SkillGap
 from utils.file_parser import extract_text_from_file
 from services.gemini_service import GeminiService
 
+def _get_resumes_upload_folder():
+    """Helper to safely get writable resumes upload folder."""
+    try:
+        from flask import current_app
+        folder = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'static/uploads'), 'resumes')
+    except Exception:
+        folder = os.path.join(tempfile.gettempdir(), 'uploads', 'resumes') if os.getenv('VERCEL') else 'static/uploads/resumes'
+    try:
+        os.makedirs(folder, exist_ok=True)
+    except Exception:
+        pass
+    return folder
+
 class ResumeService:
     @staticmethod
-    def save_and_analyze_resume(user_id, file_obj=None, raw_text_input="", target_role="Software Engineer", upload_folder="static/uploads/resumes"):
+    def save_and_analyze_resume(user_id, file_obj=None, raw_text_input="", target_role="Software Engineer", upload_folder=None):
         """
         Saves uploaded PDF/DOCX file or text input, parses extracted info,
         runs Gemini AI ATS audit, and persists into resumes & resume_analyses tables.
         """
-        os.makedirs(upload_folder, exist_ok=True)
+        if upload_folder is None:
+            upload_folder = _get_resumes_upload_folder()
+        else:
+            try:
+                os.makedirs(upload_folder, exist_ok=True)
+            except Exception:
+                pass
         filename = "resume_text_input.txt"
         file_path = None
         extracted_text = ""
@@ -100,7 +120,7 @@ class ResumeService:
 
         extracted_jd = ""
         if jd_file_obj and jd_file_obj.filename:
-            save_path = os.path.join("static/uploads/resumes", f"jd_{user_id}_{secure_filename(jd_file_obj.filename)}")
+            save_path = os.path.join(_get_resumes_upload_folder(), f"jd_{user_id}_{secure_filename(jd_file_obj.filename)}")
             jd_file_obj.save(save_path)
             extracted_jd = extract_text_from_file(save_path)
 

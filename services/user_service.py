@@ -99,10 +99,14 @@ class UserService:
                 return False, f"Invalid file format. Allowed extensions: {', '.join(allowed_extensions)}"
             
             new_filename = f"user_{user.id}_{int(os.path.getmtime(__file__))}.{ext}"
-            os.makedirs(upload_folder, exist_ok=True)
-            save_path = os.path.join(upload_folder, new_filename)
-            file_obj.save(save_path)
-            user.profile_image = new_filename
+            try:
+                if upload_folder:
+                    os.makedirs(upload_folder, exist_ok=True)
+                    save_path = os.path.join(upload_folder, new_filename)
+                    file_obj.save(save_path)
+                    user.profile_image = new_filename
+            except Exception as e:
+                print(f"[Profile Photo Upload Notice] {e}")
 
         db.session.commit()
         return True, "Profile updated successfully."

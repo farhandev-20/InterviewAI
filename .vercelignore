@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+test_*.py
+Dockerfile
+docker-compose.yml
+gunicorn.conf.py
+interviewai.db
+node_modules
