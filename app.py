@@ -17,7 +17,16 @@ def create_app(config_name=None):
         template_folder=os.path.join(BASE_DIR, 'templates'),
         static_folder=os.path.join(BASE_DIR, 'static')
     )
-    app.config.from_object(config.get(config_name, config['default']))
+    # Load config object
+    cfg_obj = config.get(config_name, config['default'])
+    app.config.from_object(cfg_obj)
+
+    # Guarantee non-empty SECRET_KEY for session & Flask-Login
+    secret = (os.getenv('SECRET_KEY') or '').strip()
+    if not secret:
+        secret = 'interviewai_super_secret_key_8492749281739_prod_fallback'
+    app.secret_key = secret
+    app.config['SECRET_KEY'] = secret
 
     # Enable Werkzeug ProxyFix for Cloudflare / Render / Vercel reverse proxy HTTPS support
     from werkzeug.middleware.proxy_fix import ProxyFix

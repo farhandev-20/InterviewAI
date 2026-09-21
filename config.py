@@ -36,7 +36,7 @@ def get_upload_folder():
     return os.path.join(BASE_DIR, 'static', 'uploads')
 
 class Config:
-    SECRET_KEY = os.getenv('SECRET_KEY', 'default_fallback_secret_key_8492749281739')
+    SECRET_KEY = (os.getenv('SECRET_KEY') or '').strip() or 'interviewai_super_secret_key_8492749281739_prod_fallback'
     SQLALCHEMY_DATABASE_URI = get_database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
