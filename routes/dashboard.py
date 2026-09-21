@@ -10,24 +10,51 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('/dashboard')
 @login_required
 def index():
-    db_stats = InterviewService.get_user_dashboard_stats(current_user.id)
+    try:
+        db_stats = InterviewService.get_user_dashboard_stats(current_user.id)
+    except Exception as e:
+        print(f"[Dashboard Stats Notice] {e}")
+        db_stats = {
+            'total_interviews': 0,
+            'average_score': 0,
+            'best_score': 0,
+            'weekly_hours': '0.0 hrs',
+            'recent_activities': []
+        }
     
-    latest_ats = ResumeService.get_latest_user_ats_score(current_user.id)
-    latest_match = ResumeService.get_latest_user_job_match(current_user.id)
-    latest_resume = ResumeService.get_latest_user_resume(current_user.id)
+    try:
+        latest_ats = ResumeService.get_latest_user_ats_score(current_user.id)
+    except Exception:
+        latest_ats = None
+        
+    try:
+        latest_match = ResumeService.get_latest_user_job_match(current_user.id)
+    except Exception:
+        latest_match = None
+        
+    try:
+        latest_resume = ResumeService.get_latest_user_resume(current_user.id)
+    except Exception:
+        latest_resume = None
     
-    # Phase 5 System Services
-    streak = SystemService.calculate_practice_streak(current_user.id)
-    unlocked = SystemService.check_and_unlock_achievements(current_user.id)
+    try:
+        streak = SystemService.calculate_practice_streak(current_user.id)
+    except Exception:
+        streak = 0
+        
+    try:
+        unlocked = SystemService.check_and_unlock_achievements(current_user.id)
+    except Exception:
+        unlocked = []
 
     stats = {
-        'total_interviews': db_stats['total_interviews'],
-        'average_score': db_stats['average_score'],
-        'best_score': db_stats['best_score'],
-        'weekly_hours': db_stats['weekly_hours'],
+        'total_interviews': db_stats.get('total_interviews', 0),
+        'average_score': db_stats.get('average_score', 0),
+        'best_score': db_stats.get('best_score', 0),
+        'weekly_hours': db_stats.get('weekly_hours', '0.0 hrs'),
         'streak': streak
     }
-    recent_activities = db_stats['recent_activities']
+    recent_activities = db_stats.get('recent_activities', [])
 
     return render_template(
         'dashboard/index.html',

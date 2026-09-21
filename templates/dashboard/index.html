@@ -74,7 +74,7 @@
         <div class="stat-label">Top Missing Skills</div>
         <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); margin-top: 0.25rem;">
           {% if ats and ats.missing_skills %}
-            {{ ats.missing_skills.split('\n')[0].replace('•', '').strip() }}
+            {{ (ats.missing_skills ~ '').split('\n')[0].replace('•', '').strip() }}
           {% else %}
             Docker, Kubernetes, AWS
           {% endif %}
