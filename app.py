@@ -37,6 +37,16 @@ def create_app(config_name=None):
     from routes.auth import login_manager
     login_manager.init_app(app)
 
+    # Ensure tables exist in every serverless container wakeup
+    @app.before_request
+    def ensure_tables():
+        if not getattr(app, '_tables_initialized', False):
+            try:
+                db.create_all()
+                app._tables_initialized = True
+            except Exception as e:
+                print(f"[Auto Table Init Notice] {e}")
+
     # Register blueprints
     app.register_blueprint(routes.main_bp)
     app.register_blueprint(routes.auth_bp)
