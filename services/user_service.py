@@ -1,4 +1,5 @@
 import os
+# pyrefly: ignore [missing-import]
 from werkzeug.utils import secure_filename
 from database.db import db
 from models.user import User
@@ -64,17 +65,27 @@ class UserService:
         """Authenticate or register user via Google OAuth while preserving existing accounts."""
         try:
             email_clean = email.strip().lower()
+            
+            # Format clean name if missing or generic
+            if not full_name or str(full_name).strip().lower() in ["", "none", "google user", "google candidate", "alex candidate"]:
+                name_part = email_clean.split('@')[0]
+                full_name = ' '.join(word.capitalize() for word in name_part.replace('.', ' ').replace('_', ' ').replace('-', ' ').split())
+            else:
+                full_name = str(full_name).strip()
+
             user = UserService.get_by_email(email_clean)
             if user:
                 if google_id and not user.google_id:
                     user.google_id = google_id
-                    db.session.commit()
+                if full_name:
+                    user.full_name = full_name
+                db.session.commit()
                 user.update_last_login()
                 return user
 
             timestamp = int(time.time())
             user = User(
-                full_name=full_name.strip() if full_name else "Google Candidate",
+                full_name=full_name,
                 email=email_clean,
                 google_id=google_id or f"google_{timestamp}",
                 target_role="Software Engineer",

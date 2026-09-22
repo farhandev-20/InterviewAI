@@ -1,4 +1,5 @@
 import os
+# pyrefly: ignore [missing-import]
 from flask import Flask
 from config import config_by_name as config
 from database.db import db

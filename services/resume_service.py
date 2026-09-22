@@ -1,5 +1,6 @@
 import os
 import tempfile
+# pyrefly: ignore [missing-import]
 from werkzeug.utils import secure_filename
 from database.db import db
 from models.resume import Resume, ResumeAnalysis, JobDescription, ResumeJobMatch, SkillGap
@@ -9,6 +10,7 @@ from services.gemini_service import GeminiService
 def _get_resumes_upload_folder():
     """Helper to safely get writable resumes upload folder."""
     try:
+        # pyrefly: ignore [missing-import]
         from flask import current_app
         folder = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'static/uploads'), 'resumes')
     except Exception:

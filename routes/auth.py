@@ -11,14 +11,7 @@ login_manager.login_message_category = 'warning'
 @login_manager.user_loader
 def load_user(user_id):
     try:
-        user = UserService.get_by_id(user_id)
-        if not user:
-            user = UserService.create_or_get_google_user(
-                email="alex.candidate@gmail.com",
-                full_name="Alex Candidate",
-                google_id="google_sim_1029384756"
-            )
-        return user
+        return UserService.get_by_id(user_id)
     except Exception as e:
         print(f"[UserLoader Notice] {e}")
         return None
@@ -91,14 +84,12 @@ def _get_google_redirect_uri():
     current_host = request.host
     is_live = ('localhost' not in current_host and '127.0.0.1' not in current_host)
     
-    if is_live:
-        if env_uri and 'localhost' not in env_uri and '127.0.0.1' not in env_uri:
-            return env_uri
-        return f"https://{current_host}/google/callback"
-    
-    if env_uri:
+    if not is_live:
+        return url_for('auth.google_callback', _external=True)
+        
+    if env_uri and 'localhost' not in env_uri and '127.0.0.1' not in env_uri:
         return env_uri
-    return url_for('auth.google_callback', _external=True)
+    return f"https://{current_host}/google/callback"
 
 @auth_bp.route('/google_login')
 @auth_bp.route('/google')
@@ -121,9 +112,8 @@ def google_login():
                 return redirect(url_for('dashboard.index'))
 
         client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
-        dummy_ids = ('your_google_client_id_here', '171863369615-4lg7lt8o6f1d1cno1opv4metvbhnp51v.apps.googleusercontent.com')
         
-        if client_id and client_id not in dummy_ids and not client_id.startswith('your_'):
+        if client_id and client_id != 'your_google_client_id_here' and not client_id.startswith('your_'):
             redirect_uri = _get_google_redirect_uri()
             params = {
                 'client_id': client_id,
