@@ -48,6 +48,11 @@ class Config:
     UPLOAD_FOLDER = get_upload_folder()
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload limit
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'svg', 'pdf', 'docx', 'doc', 'txt'}
+    
+    # Google OAuth Settings
+    GOOGLE_CLIENT_ID = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
+    GOOGLE_CLIENT_SECRET = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
+    GOOGLE_REDIRECT_URI = (os.getenv('GOOGLE_REDIRECT_URI') or '').strip()
 
 class DevelopmentConfig(Config):
     DEBUG = True

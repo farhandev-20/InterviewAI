@@ -105,50 +105,26 @@ def _get_google_redirect_uri():
 @auth_bp.route('/google_login')
 @auth_bp.route('/google')
 def google_login():
-    """Redirect to Google OAuth or development simulation."""
+    """Redirect to Google OAuth."""
     import os
     import urllib.parse
     
     try:
-        # Check if user requested demo/local simulation mode
-        if request.args.get('demo') == '1':
-            user = UserService.create_or_get_google_user(
-                email="alex.candidate@gmail.com",
-                full_name="Alex Candidate",
-                google_id="google_sim_1029384756"
-            )
-            if user:
-                login_user(user, remember=True)
-                flash(f'Signed in with Google (Demo Account)! Welcome, {user.full_name}.', 'success')
-                return redirect(url_for('dashboard.index'))
-
         client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
-        
-        if client_id and client_id != 'your_google_client_id_here' and not client_id.startswith('your_'):
-            redirect_uri = _get_google_redirect_uri()
-            params = {
-                'client_id': client_id,
-                'redirect_uri': redirect_uri,
-                'response_type': 'code',
-                'scope': 'openid email profile',
-                'prompt': 'select_account'
-            }
-            google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
-            return redirect(google_auth_url)
-
-        # Local simulation fallback when real OAuth credentials are not provided
-        user = UserService.create_or_get_google_user(
-            email="alex.candidate@gmail.com",
-            full_name="Alex Candidate",
-            google_id="google_sim_1029384756"
-        )
-        if user:
-            login_user(user, remember=True)
-            flash(f'Signed in with Google! Welcome, {user.full_name}.', 'success')
-            return redirect(url_for('dashboard.index'))
-        else:
-            flash('Error logging in with Google. Please use email & password registration.', 'warning')
+        if not client_id or client_id == 'your_google_client_id_here' or client_id.startswith('your_'):
+            flash('Google Client ID is missing in Environment Variables. Please set GOOGLE_CLIENT_ID in Vercel.', 'danger')
             return redirect(url_for('auth.login'))
+
+        redirect_uri = _get_google_redirect_uri()
+        params = {
+            'client_id': client_id,
+            'redirect_uri': redirect_uri,
+            'response_type': 'code',
+            'scope': 'openid email profile',
+            'prompt': 'select_account'
+        }
+        google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+        return redirect(google_auth_url)
     except Exception as e:
         print(f"[Google Auth Exception] {e}")
         flash(f'Authentication error: {str(e)}', 'danger')
@@ -164,6 +140,11 @@ def google_callback():
     import urllib.error
 
     code = request.args.get('code')
+    error = request.args.get('error')
+    if error:
+        flash(f'Google sign in cancelled: {error}', 'warning')
+        return redirect(url_for('auth.login'))
+
     client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
     client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
     redirect_uri = _get_google_redirect_uri()
@@ -205,7 +186,9 @@ def google_callback():
                 with urllib.request.urlopen(user_req, timeout=15) as user_resp:
                     info = json.loads(user_resp.read().decode('utf-8'))
                     email = info.get('email')
-                    name = info.get('name') or info.get('given_name') or 'Google User'
+                    name = info.get('name') or info.get('given_name')
+                    if not name and 'family_name' in info:
+                        name = f"{info.get('given_name', '')} {info.get('family_name', '')}".strip()
                     g_id = info.get('sub') or info.get('id')
 
                     if email:
