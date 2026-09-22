@@ -88,34 +88,36 @@ def login():
 
     return render_template('auth/login.html')
 
-def _get_google_redirect_uri():
-    """Dynamically determine the exact Google redirect URI based on current request."""
+def _get_google_credentials():
+    """Retrieve configured Google credentials and dynamically determine redirect URI."""
     import os
+    client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
+    client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
     env_uri = (os.getenv('GOOGLE_REDIRECT_URI') or '').strip()
+    
     current_host = request.host
     is_live = ('localhost' not in current_host and '127.0.0.1' not in current_host)
-    
     if not is_live:
-        return url_for('auth.google_callback', _external=True)
-        
-    if env_uri and 'localhost' not in env_uri and '127.0.0.1' not in env_uri:
-        return env_uri
-    return f"https://{current_host}/google/callback"
+        redirect_uri = url_for('auth.google_callback', _external=True)
+    elif env_uri and 'localhost' not in env_uri:
+        redirect_uri = env_uri
+    else:
+        redirect_uri = f"https://{current_host}/google/callback"
+
+    return client_id, client_secret, redirect_uri
 
 @auth_bp.route('/google_login')
 @auth_bp.route('/google')
 def google_login():
     """Redirect to Google OAuth."""
-    import os
     import urllib.parse
     
     try:
-        client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
-        if not client_id or client_id == 'your_google_client_id_here' or client_id.startswith('your_'):
-            flash('Google Client ID is missing in Environment Variables. Please set GOOGLE_CLIENT_ID in Vercel.', 'danger')
+        client_id, client_secret, redirect_uri = _get_google_credentials()
+        if not client_id or client_id.startswith('your_'):
+            flash('Google Client ID is missing. Please set GOOGLE_CLIENT_ID in Vercel Environment Variables.', 'danger')
             return redirect(url_for('auth.login'))
 
-        redirect_uri = _get_google_redirect_uri()
         params = {
             'client_id': client_id,
             'redirect_uri': redirect_uri,
@@ -133,7 +135,6 @@ def google_login():
 @auth_bp.route('/google/callback')
 def google_callback():
     """Handle Google OAuth authorization callback."""
-    import os
     import json
     import urllib.request
     import urllib.parse
@@ -145,9 +146,7 @@ def google_callback():
         flash(f'Google sign in cancelled: {error}', 'warning')
         return redirect(url_for('auth.login'))
 
-    client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
-    client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
-    redirect_uri = _get_google_redirect_uri()
+    client_id, client_secret, redirect_uri = _get_google_credentials()
 
     if code and client_id and client_secret:
         try:
