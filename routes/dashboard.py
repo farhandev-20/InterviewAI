@@ -88,6 +88,8 @@ def profile():
         )
 
         if success:
+            session['user_name'] = full_name
+            session['user_role'] = target_role
             flash(msg, 'success')
             return redirect(url_for('dashboard.profile'))
         else:

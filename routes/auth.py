@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from services.user_service import UserService
 from utils.validators import validate_registration, validate_email, validate_password_strength
@@ -11,7 +11,14 @@ login_manager.login_message_category = 'warning'
 @login_manager.user_loader
 def load_user(user_id):
     try:
-        return UserService.get_by_id(user_id)
+        user = UserService.get_by_id(user_id)
+        if not user and session.get('user_email'):
+            user = UserService.create_or_get_google_user(
+                email=session.get('user_email'),
+                full_name=session.get('user_name'),
+                google_id=session.get('user_google_id')
+            )
+        return user
     except Exception as e:
         print(f"[UserLoader Notice] {e}")
         return None
@@ -66,6 +73,10 @@ def login():
             return render_template('auth/login.html', email=email)
 
         # Log user in with Flask-Login
+        session['user_email'] = user.email
+        session['user_name'] = user.full_name
+        session['user_role'] = user.target_role
+        session['user_google_id'] = user.google_id
         login_user(user, remember=remember)
         flash(f'Welcome back, {user.full_name}!', 'success')
         
@@ -199,6 +210,10 @@ def google_callback():
 
                     if email:
                         user = UserService.create_or_get_google_user(email=email, full_name=name, google_id=g_id)
+                        session['user_email'] = user.email
+                        session['user_name'] = user.full_name
+                        session['user_role'] = user.target_role
+                        session['user_google_id'] = user.google_id
                         login_user(user, remember=True)
                         flash(f'Signed in as {user.full_name} ({user.email})!', 'success')
                         return redirect(url_for('dashboard.index'))
@@ -218,6 +233,7 @@ def google_callback():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    session.clear()
     logout_user()
     flash('You have been logged out safely.', 'info')
     return redirect(url_for('main.index'))
