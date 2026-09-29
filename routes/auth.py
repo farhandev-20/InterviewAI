@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models.user import User
 from services.user_service import UserService
 from utils.validators import validate_registration, validate_email, validate_password_strength
 
@@ -13,7 +14,7 @@ def load_user(user_id):
     try:
         user = UserService.get_by_id(user_id)
         if not user and session.get('user_google_id'):
-            user = User.query.filter_by(google_id=str(session.get('user_google_id')).strip()).first()
+            user = UserService.get_by_google_id(session.get('user_google_id'))
         if not user and session.get('user_email'):
             user = UserService.create_or_get_google_user(
                 email=session.get('user_email'),

@@ -26,6 +26,16 @@ class UserService:
             return None
 
     @staticmethod
+    def get_by_google_id(google_id):
+        """Retrieve user by Google ID safely."""
+        if not google_id:
+            return None
+        try:
+            return User.query.filter_by(google_id=str(google_id).strip()).first()
+        except Exception:
+            return None
+
+    @staticmethod
     def create_user(full_name, email, password, target_role="Full Stack Developer", skills="Python, SQL"):
         """Create and register a new user in the database."""
         email_clean = email.strip().lower()
