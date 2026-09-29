@@ -93,21 +93,44 @@ def login():
 
     return render_template('auth/login.html')
 
+def _decode_id_token_payload(id_token_str):
+    """Safely decode Google ID Token JSON payload (claims) without external JWT dependencies."""
+    import base64
+    import json
+    if not id_token_str or not isinstance(id_token_str, str):
+        return {}
+    try:
+        parts = id_token_str.split('.')
+        if len(parts) >= 2:
+            payload_b64 = parts[1]
+            rem = len(payload_b64) % 4
+            if rem > 0:
+                payload_b64 += '=' * (4 - rem)
+            decoded = base64.urlsafe_b64decode(payload_b64.encode('utf-8')).decode('utf-8', errors='ignore')
+            return json.loads(decoded)
+    except Exception as e:
+        print(f"[ID Token Decode Notice] {e}")
+    return {}
+
 def _get_google_credentials():
     """Retrieve configured Google credentials and dynamically determine redirect URI."""
     import os
-    client_id = (os.getenv('GOOGLE_CLIENT_ID') or '').strip()
-    client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or '').strip()
-    env_uri = (os.getenv('GOOGLE_REDIRECT_URI') or '').strip()
+    from flask import current_app
+    
+    client_id = (os.getenv('GOOGLE_CLIENT_ID') or current_app.config.get('GOOGLE_CLIENT_ID') or '').strip().strip('"').strip("'")
+    client_secret = (os.getenv('GOOGLE_CLIENT_SECRET') or current_app.config.get('GOOGLE_CLIENT_SECRET') or '').strip().strip('"').strip("'")
+    env_uri = (os.getenv('GOOGLE_REDIRECT_URI') or current_app.config.get('GOOGLE_REDIRECT_URI') or '').strip().strip('"').strip("'")
     
     current_host = request.host
     is_live = ('localhost' not in current_host and '127.0.0.1' not in current_host)
+    
     if not is_live:
         redirect_uri = url_for('auth.google_callback', _external=True)
-    elif env_uri and 'localhost' not in env_uri:
-        redirect_uri = env_uri
+    elif env_uri and 'localhost' not in env_uri and '127.0.0.1' not in env_uri:
+        redirect_uri = env_uri.rstrip('/')
     else:
-        redirect_uri = f"https://{current_host}/google/callback"
+        proto = request.headers.get('X-Forwarded-Proto', 'https' if is_live else 'http')
+        redirect_uri = f"{proto}://{current_host}/google/callback"
 
     return client_id, client_secret, redirect_uri
 
@@ -119,9 +142,17 @@ def google_login():
     
     try:
         client_id, client_secret, redirect_uri = _get_google_credentials()
+        
         if not client_id or client_id.startswith('your_'):
-            flash('Google Client ID is missing. Please set GOOGLE_CLIENT_ID in your environment variables.', 'danger')
+            flash('Google Client ID (GOOGLE_CLIENT_ID) is missing. Please add it to your Vercel Environment Variables.', 'danger')
             return redirect(url_for('auth.login'))
+
+        if not client_secret or client_secret.startswith('your_'):
+            flash('Google Client Secret (GOOGLE_CLIENT_SECRET) is missing. Please add it to your Vercel Environment Variables.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Store the exact redirect_uri in session for guaranteed parity during token exchange
+        session['oauth_redirect_uri'] = redirect_uri
 
         params = {
             'client_id': client_id,
@@ -148,37 +179,59 @@ def google_callback():
     code = request.args.get('code')
     error = request.args.get('error')
     if error:
-        flash(f'Google sign in cancelled: {error}', 'warning')
+        flash(f'Google sign in was cancelled or denied: {error}', 'warning')
         return redirect(url_for('auth.login'))
 
     client_id, client_secret, redirect_uri = _get_google_credentials()
+    login_redirect_uri = session.pop('oauth_redirect_uri', None)
+    if login_redirect_uri:
+        redirect_uri = login_redirect_uri
 
-    if code and client_id and client_secret:
-        try:
-            token_url = "https://oauth2.googleapis.com/token"
-            payload = urllib.parse.urlencode({
-                'code': code,
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'redirect_uri': redirect_uri,
-                'grant_type': 'authorization_code'
-            }).encode('utf-8')
+    if not code:
+        flash('No authorization code was received from Google.', 'warning')
+        return redirect(url_for('auth.login'))
 
-            token_req = urllib.request.Request(
-                token_url,
-                data=payload,
-                headers={
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': 'InterviewAI-OAuth-Client/1.0'
-                },
-                method='POST'
-            )
+    if not client_id or client_id.startswith('your_'):
+        flash('Google Client ID (GOOGLE_CLIENT_ID) is missing in environment variables. Please check Vercel settings.', 'danger')
+        return redirect(url_for('auth.login'))
 
-            with urllib.request.urlopen(token_req, timeout=15) as resp:
-                tokens = json.loads(resp.read().decode('utf-8'))
-                access_token = tokens.get('access_token')
+    if not client_secret or client_secret.startswith('your_'):
+        flash('Google Client Secret (GOOGLE_CLIENT_SECRET) is missing in environment variables. Please check Vercel settings.', 'danger')
+        return redirect(url_for('auth.login'))
 
-            if access_token:
+    try:
+        token_url = "https://oauth2.googleapis.com/token"
+        payload = urllib.parse.urlencode({
+            'code': code,
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code'
+        }).encode('utf-8')
+
+        token_req = urllib.request.Request(
+            token_url,
+            data=payload,
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'InterviewAI-OAuth-Client/1.0'
+            },
+            method='POST'
+        )
+
+        with urllib.request.urlopen(token_req, timeout=15) as resp:
+            tokens = json.loads(resp.read().decode('utf-8'))
+            access_token = tokens.get('access_token')
+            id_token_str = tokens.get('id_token')
+
+        info = {}
+        # 1. Parse id_token claims if available
+        if id_token_str:
+            info = _decode_id_token_payload(id_token_str)
+
+        # 2. Query userinfo endpoint with access_token if present
+        if access_token:
+            try:
                 userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
                 user_req = urllib.request.Request(
                     userinfo_url,
@@ -188,50 +241,63 @@ def google_callback():
                     }
                 )
                 with urllib.request.urlopen(user_req, timeout=15) as user_resp:
-                    info = json.loads(user_resp.read().decode('utf-8'))
-                    email = info.get('email')
-                    
-                    # 1. Extract full name, given_name, family_name
-                    name = info.get('name')
-                    if not name:
-                        given = (info.get('given_name') or '').strip()
-                        family = (info.get('family_name') or '').strip()
-                        if given or family:
-                            name = f"{given} {family}".strip()
-                    
-                    # 2. Extract profile photo URL and Google UID
-                    picture = info.get('picture') or info.get('avatar_url')
-                    g_id = info.get('sub') or info.get('id')
+                    userinfo_data = json.loads(user_resp.read().decode('utf-8'))
+                    info.update(userinfo_data)
+            except Exception as uerr:
+                print(f"[UserInfo Fetch Notice] {uerr}")
 
-                    if email or g_id:
-                        user = UserService.create_or_get_google_user(
-                            email=email,
-                            full_name=name,
-                            google_id=g_id,
-                            picture_url=picture
-                        )
-                        if user:
-                            session['user_id'] = user.id
-                            session['user_email'] = user.email
-                            session['user_name'] = user.full_name
-                            session['user_role'] = user.target_role
-                            session['user_google_id'] = user.google_id
-                            session['user_picture'] = user.profile_image
-                            login_user(user, remember=True)
-                            flash(f'Signed in as {user.full_name} ({user.email})!', 'success')
-                            return redirect(url_for('dashboard.index'))
-        except urllib.error.HTTPError as he:
-            err_body = he.read().decode('utf-8', errors='ignore') if hasattr(he, 'read') else ''
-            print(f"[Google OAuth HTTPError {he.code}] {he.reason}: {err_body}")
-            flash(f'Google authentication error: {he.reason}. Please try again.', 'danger')
-            return redirect(url_for('auth.login'))
-        except Exception as e:
-            print(f"[Google OAuth Error] {e}")
-            flash(f'Google login error: {str(e)}', 'danger')
+        email = info.get('email')
+        
+        # Extract full name, given_name, family_name
+        name = info.get('name')
+        if not name:
+            given = (info.get('given_name') or '').strip()
+            family = (info.get('family_name') or '').strip()
+            if given or family:
+                name = f"{given} {family}".strip()
+        
+        picture = info.get('picture') or info.get('avatar_url')
+        g_id = info.get('sub') or info.get('id')
+
+        if not email and not g_id:
+            flash('Failed to retrieve user profile from Google. Please try again.', 'danger')
             return redirect(url_for('auth.login'))
 
-    flash('Google authentication was cancelled or credentials missing.', 'warning')
-    return redirect(url_for('auth.login'))
+        user = UserService.create_or_get_google_user(
+            email=email,
+            full_name=name,
+            google_id=g_id,
+            picture_url=picture
+        )
+
+        if not user:
+            flash('Error creating or retrieving user account in database.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        session['user_id'] = user.id
+        session['user_email'] = user.email
+        session['user_name'] = user.full_name
+        session['user_role'] = user.target_role
+        session['user_google_id'] = user.google_id
+        session['user_picture'] = user.profile_image
+        login_user(user, remember=True)
+        flash(f'Signed in as {user.full_name} ({user.email})!', 'success')
+        return redirect(url_for('dashboard.index'))
+
+    except urllib.error.HTTPError as he:
+        err_body = he.read().decode('utf-8', errors='ignore') if hasattr(he, 'read') else ''
+        print(f"[Google OAuth HTTPError {he.code}] {he.reason}: {err_body}")
+        try:
+            err_json = json.loads(err_body)
+            error_desc = err_json.get('error_description') or err_json.get('error') or he.reason
+        except Exception:
+            error_desc = err_body or he.reason
+        flash(f'Google authentication error: {error_desc}', 'danger')
+        return redirect(url_for('auth.login'))
+    except Exception as e:
+        print(f"[Google OAuth Error] {e}")
+        flash(f'Google login error: {str(e)}', 'danger')
+        return redirect(url_for('auth.login'))
 
 @auth_bp.route('/logout')
 @login_required
