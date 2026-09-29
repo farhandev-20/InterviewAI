@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session, jsonify
 from flask_login import login_required, current_user
 from services.user_service import UserService
 from services.interview_service import InterviewService
@@ -89,6 +89,7 @@ def profile():
 
         if success:
             session['user_name'] = full_name
+            session['user_email'] = email
             session['user_role'] = target_role
             flash(msg, 'success')
             return redirect(url_for('dashboard.profile'))
@@ -97,6 +98,16 @@ def profile():
 
     db_stats = InterviewService.get_user_dashboard_stats(current_user.id)
     return render_template('dashboard/profile.html', user_stats=db_stats)
+
+@dashboard_bp.route('/api/me', methods=['GET'])
+@dashboard_bp.route('/api/user/profile', methods=['GET'])
+@login_required
+def get_user_profile():
+    """Returns the authenticated user's profile details."""
+    return jsonify({
+        'status': 'success',
+        'user': current_user.to_dict()
+    })
 
 @dashboard_bp.route('/settings')
 @login_required

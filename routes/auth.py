@@ -12,11 +12,14 @@ login_manager.login_message_category = 'warning'
 def load_user(user_id):
     try:
         user = UserService.get_by_id(user_id)
+        if not user and session.get('user_google_id'):
+            user = User.query.filter_by(google_id=str(session.get('user_google_id')).strip()).first()
         if not user and session.get('user_email'):
             user = UserService.create_or_get_google_user(
                 email=session.get('user_email'),
                 full_name=session.get('user_name'),
-                google_id=session.get('user_google_id')
+                google_id=session.get('user_google_id'),
+                picture_url=session.get('user_picture')
             )
         return user
     except Exception as e:
@@ -72,11 +75,13 @@ def login():
             flash(err, 'danger')
             return render_template('auth/login.html', email=email)
 
-        # Log user in with Flask-Login
+        # Log user in with Flask-Login & synchronize session
+        session['user_id'] = user.id
         session['user_email'] = user.email
         session['user_name'] = user.full_name
         session['user_role'] = user.target_role
         session['user_google_id'] = user.google_id
+        session['user_picture'] = user.profile_image
         login_user(user, remember=remember)
         flash(f'Welcome back, {user.full_name}!', 'success')
         
@@ -115,7 +120,7 @@ def google_login():
     try:
         client_id, client_secret, redirect_uri = _get_google_credentials()
         if not client_id or client_id.startswith('your_'):
-            flash('Google Client ID is missing. Please set GOOGLE_CLIENT_ID in Vercel Environment Variables.', 'danger')
+            flash('Google Client ID is missing. Please set GOOGLE_CLIENT_ID in your environment variables.', 'danger')
             return redirect(url_for('auth.login'))
 
         params = {
@@ -185,20 +190,36 @@ def google_callback():
                 with urllib.request.urlopen(user_req, timeout=15) as user_resp:
                     info = json.loads(user_resp.read().decode('utf-8'))
                     email = info.get('email')
-                    name = info.get('name') or info.get('given_name')
-                    if not name and 'family_name' in info:
-                        name = f"{info.get('given_name', '')} {info.get('family_name', '')}".strip()
+                    
+                    # 1. Extract full name, given_name, family_name
+                    name = info.get('name')
+                    if not name:
+                        given = (info.get('given_name') or '').strip()
+                        family = (info.get('family_name') or '').strip()
+                        if given or family:
+                            name = f"{given} {family}".strip()
+                    
+                    # 2. Extract profile photo URL and Google UID
+                    picture = info.get('picture') or info.get('avatar_url')
                     g_id = info.get('sub') or info.get('id')
 
-                    if email:
-                        user = UserService.create_or_get_google_user(email=email, full_name=name, google_id=g_id)
-                        session['user_email'] = user.email
-                        session['user_name'] = user.full_name
-                        session['user_role'] = user.target_role
-                        session['user_google_id'] = user.google_id
-                        login_user(user, remember=True)
-                        flash(f'Signed in as {user.full_name} ({user.email})!', 'success')
-                        return redirect(url_for('dashboard.index'))
+                    if email or g_id:
+                        user = UserService.create_or_get_google_user(
+                            email=email,
+                            full_name=name,
+                            google_id=g_id,
+                            picture_url=picture
+                        )
+                        if user:
+                            session['user_id'] = user.id
+                            session['user_email'] = user.email
+                            session['user_name'] = user.full_name
+                            session['user_role'] = user.target_role
+                            session['user_google_id'] = user.google_id
+                            session['user_picture'] = user.profile_image
+                            login_user(user, remember=True)
+                            flash(f'Signed in as {user.full_name} ({user.email})!', 'success')
+                            return redirect(url_for('dashboard.index'))
         except urllib.error.HTTPError as he:
             err_body = he.read().decode('utf-8', errors='ignore') if hasattr(he, 'read') else ''
             print(f"[Google OAuth HTTPError {he.code}] {he.reason}: {err_body}")
