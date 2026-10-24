@@ -36,9 +36,6 @@ class Interview(db.Model):
             return f"{mins}m {remaining_secs}s"
         return f"{remaining_secs}s"
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def __repr__(self):
         return f"<Interview id={self.id} role='{self.role}' status='{self.status}'>"
 
@@ -64,9 +61,6 @@ class Question(db.Model):
             return self.answers[-1].answer_text
         return None
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def __repr__(self):
         return f"<Question id={self.id} order={self.order_number} topic='{self.topic}'>"
 
@@ -79,9 +73,6 @@ class Answer(db.Model):
     answer_text = db.Column(db.Text, nullable=True)
     time_taken = db.Column(db.Integer, default=0)  # in seconds
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def __repr__(self):
         return f"<Answer id={self.id} question_id={self.question_id}>"
@@ -109,9 +100,6 @@ class AIFeedback(db.Model):
     improved_answer = db.Column(db.Text, nullable=True)
     missing_key_points = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def __repr__(self):
         return f"<AIFeedback id={self.id} score={self.overall_score}>"

@@ -237,7 +237,13 @@ h1, h2, h3, h4, h5, h6 {
   width: 38px;
   height: 38px;
   object-fit: contain;
-  filter: drop-shadow(0 0 8px var(--primary-glow));
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.45));
+  transition: transform var(--transition-speed) ease, filter var(--transition-speed) ease;
+}
+
+.brand-logo-container:hover .brand-logo-icon {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 18px rgba(0, 212, 255, 0.75));
 }
 
 .brand-logo-text {
@@ -345,6 +351,39 @@ h1, h2, h3, h4, h5, h6 {
 
 .nav-links a:hover {
   color: var(--text-primary);
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.desktop-auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-nav-toggle {
+  display: none;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+}
+
+.landing-nav-toggle:hover {
+  background: var(--bg-surface-hover);
+  color: var(--primary);
+}
+
+.mobile-only-nav-item {
+  display: none;
 }
 
 .hero-section {
@@ -646,6 +685,45 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   z-index: 900;
   transition: transform var(--transition-speed) var(--transition-easing);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 850;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-speed) ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.sidebar-open {
+  overflow: hidden;
+}
+
+.sidebar-close-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-left: auto;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.sidebar-close-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
 }
 
 .sidebar-brand {
@@ -1037,6 +1115,96 @@ h1, h2, h3, h4, h5, h6 {
 /* --------------------------------------------------------------------------
    11. RESPONSIVE BREAKPOINTS
    -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   11. RESPONSIVE BREAKPOINTS & MOBILE DESIGN SYSTEM
+   -------------------------------------------------------------------------- */
+
+/* Responsive Layout Utility Classes */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.settings-grid, .analyzer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  max-width: 1100px;
+}
+
+.profile-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.form-submit-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Live Interview Header Styles */
+.live-interview-header {
+  min-height: 70px;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.live-header-left, .live-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.live-role-badge {
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.live-score-badge {
+  padding: 0.35rem 0.85rem;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+.live-question-counter {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.live-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
 .menu-toggle {
   display: none;
   font-size: 1.25rem;
@@ -1044,21 +1212,97 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   color: var(--text-primary);
   cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 8px;
 }
 
+.menu-toggle:hover {
+  background: var(--bg-surface-hover);
+}
+
+/* Tablet Breakpoint (max-width: 1024px) */
 @media (max-width: 1024px) {
   .charts-grid {
     grid-template-columns: 1fr;
   }
+
+  .settings-grid, .analyzer-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
+/* Mobile & Small Tablet Breakpoint (max-width: 768px) */
 @media (max-width: 768px) {
+  /* Prevent horizontal bleed on mobile */
+  body, html {
+    overflow-x: hidden;
+  }
+
+  /* Utility classes */
+  .d-none-mobile {
+    display: none !important;
+  }
+
+  .d-block-mobile {
+    display: block !important;
+  }
+
+  .w-100-mobile {
+    width: 100% !important;
+  }
+
+  /* Typography fluid adjustments */
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.45rem; }
+  h3 { font-size: 1.2rem; }
+
+  /* Grid layout collapses */
+  .grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem;
+  }
+
+  .form-row-2col {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  .profile-stats-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .form-submit-row {
+    justify-content: stretch;
+  }
+
+  .form-submit-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Sidebar Drawer on Mobile */
   .sidebar {
     transform: translateX(-100%);
+    z-index: 1000;
+    width: 280px;
+    max-width: 85vw;
+    box-shadow: 0 0 35px rgba(0, 0, 0, 0.75);
   }
 
   .sidebar.active {
     transform: translateX(0);
+  }
+
+  .sidebar-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-brand {
+    justify-content: space-between;
+    padding: 1.25rem;
   }
 
   .main-wrapper {
@@ -1069,31 +1313,319 @@ h1, h2, h3, h4, h5, h6 {
     display: block;
   }
 
+  /* Top Navbar on Mobile */
+  .top-navbar {
+    padding: 0 0.85rem;
+    height: 60px;
+  }
+
+  .search-box {
+    display: none; /* Hide wide desktop search bar to give ample space for controls */
+  }
+
+  #notification-dropdown {
+    position: fixed !important;
+    top: 65px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: calc(100vw - 20px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .content-area {
+    padding: 1.25rem 0.85rem !important;
+  }
+
+  /* Landing Page Navigation on Mobile */
+  .landing-nav {
+    padding: 0.75rem 1rem;
+  }
+
+  .desktop-auth-buttons {
+    display: none !important;
+  }
+
+  .landing-nav-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: var(--navbar-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    flex-direction: column;
+    padding: 1.5rem 1.25rem;
+    gap: 1.25rem;
+    display: none;
+    z-index: 999;
+  }
+
+  .nav-links.active {
+    display: flex;
+    animation: fadeInNav 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mobile-only-nav-item {
+    display: block !important;
+    width: 100%;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .nav-links li {
+    width: 100%;
+  }
+
+  .nav-links a {
+    font-size: 1.05rem;
+    display: block;
+    padding: 0.35rem 0;
+  }
+
+  .brand-logo-text .brand-logo-tagline {
+    display: none; /* Keep header compact on mobile */
+  }
+
+  .brand-logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-logo-text .brand-logo-title {
+    font-size: 1.25rem;
+  }
+
+  /* Hero Section on Mobile */
+  .hero-section {
+    padding: 6.5rem 1rem 3rem 1rem;
+  }
+
   .hero-title {
-    font-size: 2.4rem;
+    font-size: 2rem !important;
+    line-height: 1.25;
   }
 
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem !important;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto;
+    gap: 0.75rem;
+  }
+
+  .hero-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Demo Video Showcase on Mobile */
+  .demo-video-container {
+    padding: 0.75rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .demo-player-box {
+    aspect-ratio: auto !important;
+    min-height: 480px !important;
+    padding: 3.5rem 1rem 1.5rem 1rem !important;
+  }
+
+  .demo-player-grid {
+    grid-template-columns: 1fr !important;
+    padding: 0 !important;
+    gap: 1.5rem !important;
+  }
+
+  .demo-player-badges {
+    top: 0.85rem !important;
+    left: 0.85rem !important;
+  }
+
+  /* Dashboard Widgets on Mobile */
+  .dashboard-welcome-banner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.85rem;
+  }
+
+  .dashboard-welcome-banner h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .widgets-summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  /* Live Interview Screen on Mobile */
+  .live-interview-header {
+    height: auto;
+    min-height: 56px;
+    padding: 0.5rem 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .live-header-left, .live-header-right {
+    gap: 0.5rem;
+  }
+
+  .live-role-badge {
+    display: none !important;
+  }
+
+  .live-score-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.55rem;
+  }
+
+  .live-question-counter {
+    font-size: 0.8rem;
+  }
+
+  .live-timer-badge {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .exit-btn .exit-text {
+    display: none;
+  }
+
+  /* Mode Selector Grid */
+  .mode-selector-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem;
+  }
+
+  .estimated-duration-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .setup-action-buttons {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .setup-action-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Reports & Analyzer Screens on Mobile */
+  .report-welcome-banner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.85rem;
+  }
+
+  .report-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .report-header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .report-overview-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .report-score-stat {
+    text-align: left !important;
+    width: 100%;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+  }
+
+  .ats-score-banner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1.25rem;
+  }
+
+  .report-session-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .report-session-right {
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+  }
+
+  .report-view-btn {
+    flex-grow: 0;
   }
 
   .profile-grid {
     grid-template-columns: 1fr;
-  }
-
-  .search-box {
-    width: 180px;
+    gap: 1.25rem;
   }
 }
 
-@keyframes slideInRight {
+/* Small Smartphone Breakpoint (max-width: 480px) */
+@media (max-width: 480px) {
+  .auth-wrapper {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .auth-card {
+    padding: 1.5rem 1.15rem;
+    border-radius: 16px;
+  }
+
+  .auth-header h2 {
+    font-size: 1.45rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.65rem;
+  }
+
+  /* Ensure inputs have >=16px font to prevent iOS Safari auto-zoom */
+  .form-control, input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+@keyframes fadeInNav {
   from {
-    transform: translateX(100%);
     opacity: 0;
+    transform: translateY(-8px);
   }
   to {
-    transform: translateX(0);
     opacity: 1;
+    transform: translateY(0);
   }
 }
 

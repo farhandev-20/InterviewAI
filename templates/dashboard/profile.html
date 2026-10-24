@@ -28,7 +28,7 @@
     <form action="{{ url_for('dashboard.profile') }}" method="POST" enctype="multipart/form-data">
       <input type="file" id="profile_photo" name="profile_photo" accept="image/*" style="display: none;" onchange="previewImage(this)">
 
-      <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+      <div class="form-row-2col">
         <!-- Full Name -->
         <div class="form-group">
           <label for="full_name" class="form-label">Full Name</label>
@@ -55,7 +55,7 @@
       </div>
 
       <!-- Account & Interview Statistics -->
-      <div class="grid-3" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem; margin-bottom: 1.5rem; background: var(--bg-canvas); padding: 1rem; border-radius: 12px;">
+      <div class="profile-stats-row" style="background: var(--bg-canvas); padding: 1rem; border-radius: 12px; margin-top: 1rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
         <div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">Completed Interviews</div>
           <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">{{ user_stats.total_interviews if user_stats else 0 }}</div>
@@ -71,8 +71,8 @@
       </div>
 
       <!-- Submit Button -->
-      <div style="display: flex; justify-content: flex-end;">
-        <button type="submit" class="btn btn-primary">
+      <div class="form-submit-row">
+        <button type="submit" class="btn btn-primary w-100-mobile">
           <i class="fas fa-save"></i> Save Profile Changes
         </button>
       </div>

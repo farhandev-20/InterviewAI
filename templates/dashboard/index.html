@@ -4,14 +4,14 @@
 
 {% block content %}
 <!-- Welcome Header -->
-<div class="welcome-banner" style="display: flex; justify-content: space-between; align-items: flex-end;">
+<div class="welcome-banner dashboard-welcome-banner">
   <div>
     <h1>Welcome back, {{ current_user.full_name }}! 👋</h1>
     <p>Track your interview progress, analyze ATS resume compliance, and build your confidence.</p>
   </div>
-  <div style="display: flex; gap: 0.75rem; align-items: center;">
+  <div class="welcome-banner-actions">
     <!-- Practice Streak Badge -->
-    <div style="padding: 0.5rem 1rem; background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(239,68,68,0.15) 100%); border: 1px solid rgba(245,158,11,0.3); border-radius: 30px; font-weight: 700; font-size: 0.9rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.5rem;">
+    <div class="streak-badge-pill" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(239,68,68,0.15) 100%); border: 1px solid rgba(245,158,11,0.3); border-radius: 30px; font-weight: 700; font-size: 0.9rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.5rem;">
       <i class="fas fa-fire" style="font-size: 1.1rem; color: #f97316;"></i>
       <span>{{ stats.streak }} Day Practice Streak</span>
     </div>
@@ -19,7 +19,7 @@
 </div>
 
 <!-- Phase 4 Resume Intelligence Widgets Row -->
-<div class="grid-3" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="grid-3 widgets-summary-grid" style="gap: 1.25rem; margin-bottom: 2rem;">
   
   <!-- Latest ATS Score Widget -->
   <div class="card card-hover" style="background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-hover) 100%); border-color: rgba(99,102,241,0.25);">

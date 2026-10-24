@@ -22,9 +22,6 @@ class Notification(db.Model):
             'created_at': self.created_at.strftime('%b %d, %H:%M')
         }
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def __repr__(self):
         return f"<Notification id={self.id} title='{self.title}'>"
 
@@ -49,9 +46,6 @@ class Achievement(db.Model):
             'icon': self.icon,
             'unlocked_at': self.unlocked_at.strftime('%b %d, %Y')
         }
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def __repr__(self):
         return f"<Achievement id={self.id} key='{self.badge_key}'>"

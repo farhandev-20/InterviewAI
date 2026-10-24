@@ -5,40 +5,37 @@
 {% block body %}
 <div style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-canvas);">
   <!-- Top Bar Navbar -->
-  <header
-    style="height: 70px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000;">
-    <div style="display: flex; align-items: center; gap: 1.5rem;">
+  <header class="live-interview-header">
+    <div class="live-header-left">
       <a href="{{ url_for('dashboard.index') }}" class="brand-logo-container">
         <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="InterviewAI" class="brand-logo-icon"
           style="width: 32px; height: 32px;">
       </a>
-      <a href="#" id="exit-interview-btn" class="btn btn-outline btn-sm"
+      <a href="#" id="exit-interview-btn" class="btn btn-outline btn-sm exit-btn"
         style="color: var(--accent-rose); border-color: rgba(244,63,94,0.3);">
-        <i class="fas fa-times"></i> End Interview
+        <i class="fas fa-times"></i> <span class="exit-text">End</span>
       </a>
-      <div style="font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+      <div class="live-role-badge">
         <i class="fas fa-video" style="color: var(--primary);"></i>
-        <span>{{ interview.role }} ({{ interview.interview_type }})</span>
+        <span>{{ interview.role }}</span>
       </div>
     </div>
 
     <!-- Question Counter, Timer, & Live Score -->
-    <div style="display: flex; align-items: center; gap: 1.25rem;">
+    <div class="live-header-right">
       {% if feedback %}
-      <div
-        style="padding: 0.35rem 0.85rem; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; font-weight: 700; font-size: 0.85rem; color: var(--primary);">
-        AI Score: {{ feedback.overall_score }}%
+      <div class="live-score-badge">
+        AI: {{ feedback.overall_score }}%
       </div>
       {% endif %}
 
-      <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary);">
-        Question <span style="color: var(--text-primary); font-weight: 700;">{{ q_num }}</span> of {{ total_q }}
+      <div class="live-question-counter">
+        Q<span style="color: var(--text-primary); font-weight: 700;">{{ q_num }}</span>/{{ total_q }}
       </div>
 
       <!-- Live 2-Minute Question Timer -->
-      <div id="timer-container"
-        style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.9rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 20px; font-weight: 700; font-size: 0.95rem; transition: all 0.3s ease;">
-        <i class="fas fa-clock" style="font-size: 0.9rem;"></i>
+      <div id="timer-container" class="live-timer-badge">
+        <i class="fas fa-clock"></i>
         <span id="timer-display">02:00</span>
       </div>
     </div>

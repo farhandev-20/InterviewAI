@@ -18,9 +18,6 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     last_login = db.Column(db.DateTime, nullable=True)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def set_password(self, password):
         """Hash and set the user's password."""
         if password:

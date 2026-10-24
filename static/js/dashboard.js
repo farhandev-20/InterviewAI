@@ -3,15 +3,66 @@
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Mobile Sidebar Toggle
+  // Mobile Sidebar Toggle & Overlay Logic
   const menuToggle = document.getElementById('menu-toggle');
   const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
 
-  if (menuToggle && sidebar) {
-    menuToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
+  function openSidebar() {
+    if (sidebar) sidebar.classList.add('active');
+    if (sidebarOverlay) sidebarOverlay.classList.add('active');
+    document.body.classList.add('sidebar-open');
+  }
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.remove('active');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+    document.body.classList.remove('sidebar-open');
+  }
+
+  if (menuToggle) {
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (sidebar && sidebar.classList.contains('active')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
     });
   }
+
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeSidebar();
+    });
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      closeSidebar();
+    });
+  }
+
+  // Close sidebar on mobile when navigating via a link
+  if (sidebar) {
+    const navLinks = sidebar.querySelectorAll('.sidebar-menu a, .sidebar-footer a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
+    });
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar && sidebar.classList.contains('active')) {
+      closeSidebar();
+    }
+  });
 
   // Auto Dismiss Flash Messages after 5 seconds
   const alerts = document.querySelectorAll('.alert');

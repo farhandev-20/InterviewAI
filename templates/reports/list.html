@@ -14,9 +14,9 @@
   {% if interviews %}
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       {% for inv in interviews %}
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: var(--bg-canvas); border-radius: 12px; border: 1px solid var(--border-color);">
-          <div style="display: flex; align-items: center; gap: 1.25rem;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99,102,241,0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <div class="report-session-item" style="padding: 1.25rem; background: var(--bg-canvas); border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+          <div class="report-session-left" style="display: flex; align-items: center; gap: 1.25rem;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99,102,241,0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
               <i class="fas fa-robot"></i>
             </div>
             <div>
@@ -27,12 +27,12 @@
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 1.5rem;">
-            <div style="text-align: right;">
+          <div class="report-session-right" style="display: flex; align-items: center; gap: 1.5rem;">
+            <div class="report-score-block" style="text-align: right;">
               <div style="font-weight: 800; font-size: 1.2rem; color: var(--accent-emerald);">{{ inv.score }}%</div>
               <span class="badge badge-{{ 'success' if inv.status == 'completed' else 'warning' }}">{{ inv.status.replace('_', ' ').capitalize() }}</span>
             </div>
-            <a href="{{ url_for('interview.report', interview_id=inv.id) }}" class="btn btn-primary btn-sm">
+            <a href="{{ url_for('interview.report', interview_id=inv.id) }}" class="btn btn-primary btn-sm report-view-btn">
               <i class="fas fa-file-alt"></i> View Report
             </a>
           </div>

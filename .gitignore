@@ -36,6 +36,7 @@ ENV/
 # IDE & OS files
 .vscode/
 .idea/
+.gemini/
 .DS_Store
 *.swp
 
