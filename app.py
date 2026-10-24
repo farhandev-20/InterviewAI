@@ -31,7 +31,33 @@ def create_app(config_name=None):
 
     # Enable Werkzeug ProxyFix for Cloudflare / Render / Vercel reverse proxy HTTPS support
     from werkzeug.middleware.proxy_fix import ProxyFix
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    
+    class VercelPathMiddleware:
+        """
+        WSGI middleware that restores original request URI on Vercel
+        where rewrites rewrite PATH_INFO to the internal function path (/api/index or /api/index.py).
+        """
+        def __init__(self, wsgi_app):
+            self.wsgi_app = wsgi_app
+
+        def __call__(self, environ, start_response):
+            forwarded_uri = environ.get('HTTP_X_FORWARDED_URI')
+            matched_path = environ.get('HTTP_X_MATCHED_PATH')
+            target_path = forwarded_uri or matched_path
+
+            if target_path:
+                path_only = target_path.split('?')[0]
+                if path_only in ('/api/index', '/api/index.py'):
+                    environ['PATH_INFO'] = '/'
+                elif path_only:
+                    environ['PATH_INFO'] = path_only
+                environ['SCRIPT_NAME'] = ''
+            elif environ.get('PATH_INFO') in ('/api/index', '/api/index.py'):
+                environ['PATH_INFO'] = '/'
+
+            return self.wsgi_app(environ, start_response)
+
+    app.wsgi_app = VercelPathMiddleware(ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1))
 
     # Ensure upload directories exist safely
     try:

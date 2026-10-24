@@ -6,6 +6,7 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 @main_bp.route('/api')
 @main_bp.route('/api/index')
+@main_bp.route('/api/index.py')
 def index():
     return render_template('index.html')
 
