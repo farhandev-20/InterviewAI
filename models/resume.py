@@ -26,6 +26,9 @@ class Resume(db.Model):
     matches = db.relationship('ResumeJobMatch', backref='resume', lazy=True, cascade="all, delete-orphan")
     skill_gaps = db.relationship('SkillGap', backref='resume', lazy=True, cascade="all, delete-orphan")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return f"<Resume id={self.id} filename='{self.filename}'>"
 
@@ -57,6 +60,9 @@ class ResumeAnalysis(db.Model):
     actionable_improvements = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return f"<ResumeAnalysis id={self.id} ats_score={self.ats_score}>"
 
@@ -81,6 +87,9 @@ class JobDescription(db.Model):
     matches = db.relationship('ResumeJobMatch', backref='job_description', lazy=True, cascade="all, delete-orphan")
     skill_gaps = db.relationship('SkillGap', backref='job_description', lazy=True, cascade="all, delete-orphan")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return f"<JobDescription id={self.id} title='{self.title}'>"
 
@@ -100,6 +109,9 @@ class ResumeJobMatch(db.Model):
     recommended_improvements = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return f"<ResumeJobMatch id={self.id} match={self.overall_match_pct}%>"
 
@@ -116,6 +128,9 @@ class SkillGap(db.Model):
     priority_skills = db.Column(db.Text, nullable=True)
     learning_path = db.Column(db.Text, nullable=True)  # JSON or formatted list
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def __repr__(self):
         return f"<SkillGap id={self.id}>"
