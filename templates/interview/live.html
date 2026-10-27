@@ -49,7 +49,7 @@
   </div>
 
   <!-- Main Interview Content -->
-  <main
+  <main class="live-interview-main"
     style="flex-grow: 1; max-width: 1150px; width: 100%; margin: 1.5rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
 
     {% if interview.mode == 'video' %}
@@ -146,9 +146,9 @@
     {% else %}
 
     <!-- Standard Text / Voice Mode with AI HR Interviewer Stage -->
-    <div class="card" style="padding: 1.5rem; position: relative; margin-bottom: 0.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <div class="card live-question-card" style="padding: 1.5rem; position: relative; margin-bottom: 0.5rem;">
+      <div class="live-question-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <span class="badge badge-primary" id="topic-badge"><i class="fas fa-tag"></i> {{ question.topic }}</span>
           <span class="badge badge-coming-soon" id="difficulty-badge" style="text-transform: capitalize;">{{
             question.difficulty }}</span>
@@ -163,8 +163,8 @@
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 1.5rem;">
-        <div class="ai-avatar-wrapper" style="width: 85px; height: 85px; flex-shrink: 0;">
+      <div class="live-question-content" style="display: flex; align-items: center; gap: 1.5rem;">
+        <div class="ai-avatar-wrapper live-avatar-wrapper" style="width: 85px; height: 85px; flex-shrink: 0;">
           <div class="ai-avatar-aura" id="ai-avatar-aura"></div>
           <div class="ai-avatar-portrait" id="ai-avatar-portrait" style="width: 75px; height: 75px;">
             <i class="fas fa-user-tie ai-avatar-icon" style="font-size: 2.2rem;"></i>
@@ -177,8 +177,8 @@
           </div>
         </div>
 
-        <div style="flex-grow: 1;">
-          <div
+        <div class="live-question-body" style="flex-grow: 1;">
+          <div class="live-question-subtitle"
             style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-purple); font-weight: 700; margin-bottom: 0.25rem;">
             AI HR Interviewer Question
           </div>
@@ -193,16 +193,16 @@
 
     <!-- Question Card in Video Mode -->
     {% if interview.mode == 'video' %}
-    <div class="card" style="padding: 1.25rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <div class="card live-question-card" style="padding: 1.25rem;">
+      <div class="live-question-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <span class="badge badge-primary" id="topic-badge"><i class="fas fa-tag"></i> {{ question.topic }}</span>
           <span class="badge badge-coming-soon" id="difficulty-badge" style="text-transform: capitalize;">{{
             question.difficulty }}</span>
           <span id="interview-stage-badge" class="badge"
             style="background: rgba(99,102,241,0.1); color: var(--primary);">Dynamic Flow</span>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <button id="btn-tts-read" type="button" class="btn btn-outline btn-sm">
             <i class="fas fa-volume-up"></i> Read Aloud
           </button>
@@ -238,7 +238,7 @@
 
     <!-- Candidate Answer Input & Autonomous Controls -->
     <form action="{{ url_for('interview.live', interview_id=interview.id, q=q_num) }}" method="POST" id="interview-form"
-      class="card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+      class="card live-response-card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
       <input type="hidden" name="action" id="action-input" value="next">
       <input type="hidden" name="time_taken" id="time_taken_input" value="0">
       <input type="hidden" id="current-question-id" value="{{ question.id }}">
@@ -246,14 +246,13 @@
       <input type="hidden" id="interview-mode" value="{{ interview.mode }}">
 
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-          <label for="answer-input" class="form-label"
+        <div class="live-response-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+          <label for="answer-input" class="form-label live-response-label"
             style="font-weight: 600; margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem;">
-            <i class="fas fa-microphone-lines" style="color: var(--primary);"></i> Candidate Response (Hands-Free Voice
-            / Type)
+            <i class="fas fa-microphone-lines" style="color: var(--primary);"></i> Candidate Response (Hands-Free Voice / Type)
           </label>
 
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="live-response-tools" style="display: flex; align-items: center; gap: 0.75rem;">
             <button type="button" id="btn-stt-toggle" class="btn btn-outline btn-sm">
               <i class="fas fa-microphone" style="color: var(--primary);"></i> Voice Recording Active
             </button>
@@ -267,9 +266,9 @@
       </div>
 
       <!-- Action Navigation Buttons -->
-      <div
+      <div class="interview-actions-bar"
         style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <div class="interview-flow-status" style="display: flex; gap: 0.5rem; align-items: center;">
           {% if q_num > 1 %}
           <button type="button" class="btn btn-secondary btn-sm" data-action="prev" id="btn-prev-question">
             <i class="fas fa-chevron-left"></i> Previous
@@ -280,12 +279,12 @@
           </span>
         </div>
 
-        <div style="display: flex; gap: 0.5rem;">
-          <button type="button" class="btn btn-outline btn-sm" data-action="skip" id="btn-skip-question">
+        <div class="interview-btn-group" style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-outline btn-sm btn-skip" data-action="skip" id="btn-skip-question">
             Skip Question <i class="fas fa-forward"></i>
           </button>
-          <button type="button" class="btn btn-primary btn-sm" data-action="next" id="btn-submit-turn">
-            Submit Answer Now <i class="fas fa-chevron-right"></i>
+          <button type="button" class="btn btn-primary btn-sm btn-submit" data-action="next" id="btn-submit-turn">
+            Submit Answer <i class="fas fa-chevron-right"></i>
           </button>
         </div>
       </div>

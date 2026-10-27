@@ -67,7 +67,7 @@
         <label for="interview_type" class="form-label"><i class="fas fa-brain" style="color: var(--accent-emerald);"></i> Interview Focus Type</label>
         <select id="interview_type" name="interview_type" class="form-control" style="font-size: 1rem; padding: 0.85rem;" required>
           {% for t in types %}
-            <option value="{{ t }}" {% if t == 'Technical' %}selected{% endif %}>{{ t }} Interview</option>
+            <option value="{{ t }}" {% if t == 'Technical' or t == 'Technical Interview' %}selected{% endif %}>{{ t if 'Interview' in t else t ~ ' Interview' }}</option>
           {% endfor %}
         </select>
       </div>

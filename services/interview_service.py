@@ -7,57 +7,60 @@ from services.gemini_service import GeminiService
 
 class InterviewService:
     @staticmethod
-    def create_interview(user_id, role, difficulty, interview_type, count=5, use_ai=True, mode='text'):
+    def create_interview(user_id, role, difficulty, interview_type, count=5, use_ai=True, mode='text', resume_text=None):
         """
         Generates a new interview record populated with non-repeating questions
-        selected from Gemini AI or question bank.
+        matching the selected role, interview focus, and calibrated difficulty.
         """
+        from services.question_bank import get_bank_questions, normalize_role, normalize_focus
         count = int(count)
+        norm_role = normalize_role(role)
+        norm_focus = normalize_focus(interview_type)
         selected_questions = []
 
-        # Attempt AI question generation
-        if use_ai:
-            ai_questions = GeminiService.generate_ai_questions(role, difficulty, count, interview_type)
-            if ai_questions and len(ai_questions) > 0:
-                selected_questions = ai_questions
+        # 1. Attempt Resume-Tailored generation if resume_text is provided
+        if resume_text and len(resume_text.strip()) > 0:
+            selected_questions = GeminiService.generate_resume_interview_questions(
+                resume_text=resume_text,
+                count=count,
+                role=norm_role,
+                difficulty=difficulty,
+                interview_type=norm_focus
+            )
+        # 2. Otherwise generate role-based AI questions
+        elif use_ai:
+            selected_questions = GeminiService.generate_ai_questions(
+                role=norm_role,
+                difficulty=difficulty,
+                count=count,
+                question_type=norm_focus
+            )
 
-        # Fallback to question bank if AI returns empty
-        if not selected_questions:
-            filtered = []
-            for q in QUESTION_BANK:
-                type_match = (interview_type == "Mixed") or (q["type"] == interview_type)
-                role_match = (q["role"] == role) or (q["role"] == "All Roles")
-                diff_match = (q["difficulty"] == difficulty)
-                if type_match and role_match and diff_match:
-                    filtered.append(q)
+        # 3. Fallback to question bank if needed or short
+        if not selected_questions or len(selected_questions) < count:
+            bank_q = get_bank_questions(norm_role, norm_focus, difficulty, count)
+            if not selected_questions:
+                selected_questions = bank_q
+            else:
+                seen_texts = {q["question"].lower() for q in selected_questions}
+                for bq in bank_q:
+                    if bq["question"].lower() not in seen_texts:
+                        seen_texts.add(bq["question"].lower())
+                        selected_questions.append(bq)
+                    if len(selected_questions) >= count:
+                        break
 
-            if len(filtered) < count:
-                for q in QUESTION_BANK:
-                    if q not in filtered:
-                        type_match = (interview_type == "Mixed") or (q["type"] == interview_type)
-                        role_match = (q["role"] == role) or (q["role"] == "All Roles")
-                        if type_match and role_match:
-                            filtered.append(q)
+        selected_questions = selected_questions[:count]
 
-            if len(filtered) < count:
-                for q in QUESTION_BANK:
-                    if q not in filtered:
-                        filtered.append(q)
-
-            sampled = random.sample(filtered, min(count, len(filtered)))
-            selected_questions = [{
-                "question": q["question"],
-                "topic": q["topic"],
-                "difficulty": difficulty,
-                "sample_answer": q["sample_answer"]
-            } for q in sampled]
+        # Role label to persist
+        stored_role = f"{norm_role} (Resume Tailored)" if (resume_text and len(resume_text.strip()) > 0) else norm_role
 
         # Instantiate Interview Record
         interview = Interview(
             user_id=user_id,
-            role=role,
+            role=stored_role,
             difficulty=difficulty,
-            interview_type=interview_type,
+            interview_type=norm_focus,
             mode=mode if mode in ['text', 'voice', 'video'] else 'text',
             total_questions=len(selected_questions),
             start_time=datetime.utcnow(),
@@ -211,25 +214,53 @@ class InterviewService:
         interview.difficulty = next_diff
         db.session.commit()
 
-        # 4. Determine stage progression
+        # 4. Determine stage progression based on interview_type
         next_q_num = current_q_num + 1
-        stages = [
-            (1, "Introduction & Background"),
-            (2, "Technical Knowledge & Concepts"),
-            (3, "Technical Deep-Dive"),
-            (4, "Project Experience & Architecture"),
-            (5, "System Design & Edge Cases"),
-            (6, "Problem Solving & Analytical Thinking"),
-            (7, "Scenario-Based Troubleshooting"),
-            (8, "Behavioral & Conflict Management"),
-            (9, "Leadership & Teamwork"),
-            (10, "Career Aspirations & Wrap-up")
-        ]
-        stage_name = "Technical Knowledge"
-        for q_idx, s_name in stages:
-            if next_q_num == q_idx:
-                stage_name = s_name
-                break
+        from services.question_bank import normalize_focus
+        norm_focus = normalize_focus(interview.interview_type)
+
+        if norm_focus == "HR Interview":
+            stage_map = {
+                1: "Background & Motivation",
+                2: "Workplace Fit & Communication",
+                3: "Feedback & Growth Mindset",
+                4: "Career Goals & Alignment",
+                5: "Team Values & Culture"
+            }
+        elif norm_focus == "Behavioral Interview":
+            stage_map = {
+                1: "Past Project Challenges",
+                2: "Adaptability & Shifting Priorities",
+                3: "Cross-Functional Collaboration",
+                4: "Ownership & Initiative",
+                5: "Incident Remediation & Accountability"
+            }
+        elif norm_focus == "Scenario Based Interview":
+            stage_map = {
+                1: "Onboarding & Technical Action Plan",
+                2: "Live Production Outage Response",
+                3: "Timeline vs Quality Trade-offs",
+                4: "Distributed Architecture Redesign",
+                5: "Third-Party Integration Failures"
+            }
+        elif norm_focus == "Problem Solving Interview":
+            stage_map = {
+                1: "Requirement Decomposition",
+                2: "Latency Bottleneck Diagnostics",
+                3: "Caching & Invalidation Strategy",
+                4: "Large-Scale Data Processing",
+                5: "Zero-Downtime Refactoring"
+            }
+        else: # Technical Interview
+            stage_map = {
+                1: "Technical Background & Core Stack",
+                2: "Language & Architectural Principles",
+                3: "Deep-Dive Design Trade-offs",
+                4: "Diagnostics & Root Cause Analysis",
+                5: "Scalability & Resilience Engineering"
+            }
+
+        stage_name = stage_map.get(next_q_num, f"Advanced {norm_focus} Exploration")
 
         # 5. Gather history and candidate resume
         from services.resume_service import ResumeService
@@ -255,7 +286,8 @@ class InterviewService:
             previous_history=history,
             candidate_profile=resume_text,
             last_answer=answer_text,
-            last_score=last_score
+            last_score=last_score,
+            interview_type=interview.interview_type
         )
 
         # 7. Update or create the next Question in database

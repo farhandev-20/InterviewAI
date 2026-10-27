@@ -15,51 +15,29 @@ def setup():
     if request.method == 'POST':
         role = request.form.get('role', 'Python Developer')
         difficulty = request.form.get('difficulty', 'Medium')
-        interview_type = request.form.get('interview_type', 'Technical')
+        interview_type = request.form.get('interview_type', 'Technical Interview')
         mode = request.form.get('mode', 'text')
-        count = request.form.get('count', 5)
+        count = int(request.form.get('count', 5))
         use_resume = True if request.form.get('use_resume') else False
 
-        # If user selected Resume-Based Personalized Questions
-        if use_resume and latest_resume:
-            personalized_questions = GeminiService.generate_resume_interview_questions(
-                resume_text=latest_resume.raw_text,
-                count=int(count)
-            )
-            interview = InterviewService.create_interview(
-                user_id=current_user.id,
-                role=f"{role} (Resume Tailored)",
-                difficulty=difficulty,
-                interview_type=interview_type,
-                count=count,
-                use_ai=False,
-                mode=mode
-            )
-            # Replace questions with personalized resume questions
-            Question.query.filter_by(interview_id=interview.id).delete()
-            for idx, q_data in enumerate(personalized_questions, start=1):
-                q_rec = Question(
-                    interview_id=interview.id,
-                    question_text=q_data["question"],
-                    topic=q_data.get("topic", "Personalized Project Q"),
-                    difficulty=difficulty,
-                    sample_answer=q_data.get("sample_answer", "Model solution"),
-                    order_number=idx
-                )
-                from database.db import db
-                db.session.add(q_rec)
-            from database.db import db
-            db.session.commit()
-        else:
-            interview = InterviewService.create_interview(
-                user_id=current_user.id,
-                role=role,
-                difficulty=difficulty,
-                interview_type=interview_type,
-                count=count,
-                use_ai=True,
-                mode=mode
-            )
+        # Check for uploaded resume when resume-tailoring is requested
+        resume_raw_text = None
+        if use_resume:
+            if latest_resume and latest_resume.raw_text and len(latest_resume.raw_text.strip()) > 0:
+                resume_raw_text = latest_resume.raw_text
+            else:
+                flash('No uploaded resume found. Proceeding with role-based practice questions.', 'info')
+
+        interview = InterviewService.create_interview(
+            user_id=current_user.id,
+            role=role,
+            difficulty=difficulty,
+            interview_type=interview_type,
+            count=count,
+            use_ai=True,
+            mode=mode,
+            resume_text=resume_raw_text
+        )
 
         flash('AI Interview session initialized! Good luck.', 'success')
         return redirect(url_for('interview.live', interview_id=interview.id, q=1))
@@ -70,13 +48,19 @@ def setup():
         "Backend Developer",
         "Full Stack Developer",
         "Java Developer",
-        "UI UX Designer",
+        "UI/UX Designer",
         "Data Analyst",
         "Machine Learning Engineer",
         "HR Interview"
     ]
     difficulties = ["Easy", "Medium", "Hard"]
-    types = ["Technical", "HR", "Behavioral", "Scenario Based", "Problem Solving"]
+    types = [
+        "Technical Interview",
+        "HR Interview",
+        "Behavioral Interview",
+        "Scenario Based Interview",
+        "Problem Solving Interview"
+    ]
     question_counts = [5, 10, 15, 20]
 
     return render_template(

@@ -28,13 +28,16 @@
 <body>
 
   <!-- Flash Messages Notification Container -->
-  <div class="flash-messages">
+  <div class="flash-messages" id="flash-messages-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
           <div class="alert alert-{{ category }}">
-            <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
-            <span>{{ message }}</span>
+            <div class="alert-content">
+              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+              <span>{{ message }}</span>
+            </div>
+            <button type="button" class="alert-close-btn" aria-label="Close notification">&times;</button>
           </div>
         {% endfor %}
       {% endif %}

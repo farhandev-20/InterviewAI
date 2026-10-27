@@ -1043,6 +1043,7 @@ body.sidebar-open {
   flex-direction: column;
   gap: 0.75rem;
   max-width: 380px;
+  pointer-events: none;
 }
 
 .alert {
@@ -1051,9 +1052,42 @@ body.sidebar-open {
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   animation: slideInRight 0.3s ease;
+  pointer-events: auto;
+  position: relative;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  word-break: break-word;
+}
+
+.alert-close-btn {
+  background: transparent;
+  border: none;
+  color: currentColor;
+  opacity: 0.75;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.alert-close-btn:hover {
+  opacity: 1;
 }
 
 .alert-success {
@@ -1078,6 +1112,24 @@ body.sidebar-open {
   background: #0c4a6e;
   color: #bae6fd;
   border: 1px solid #0369a1;
+}
+
+/* Sidebar Backdrop Overlay on Mobile */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1950;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Modal Overlay */
@@ -1281,17 +1333,41 @@ body.sidebar-open {
     justify-content: center;
   }
 
+  /* Mobile Flash Alerts Toast (Issue 2 & 3: Never obstruct page content) */
+  .flash-messages {
+    top: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    max-width: none !important;
+    width: auto !important;
+    z-index: 3100 !important;
+    gap: 0.5rem !important;
+  }
+
+  .alert {
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.82rem !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    animation: slideDownToast 0.3s ease !important;
+  }
+
+  .alert-content {
+    font-size: 0.82rem !important;
+  }
+
   /* Sidebar Drawer on Mobile */
   .sidebar {
     transform: translateX(-100%);
-    z-index: 1000;
+    z-index: 2000 !important;
     width: 280px;
     max-width: 85vw;
     box-shadow: 0 0 35px rgba(0, 0, 0, 0.75);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   .sidebar.active {
-    transform: translateX(0);
+    transform: translateX(0) !important;
   }
 
   .sidebar-close-btn {
@@ -1310,7 +1386,23 @@ body.sidebar-open {
   }
 
   .menu-toggle {
-    display: block;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .menu-toggle:active {
+    transform: scale(0.95);
+    background: var(--bg-surface-hover);
   }
 
   /* Top Navbar on Mobile */
@@ -1479,7 +1571,7 @@ body.sidebar-open {
   /* Live Interview Screen on Mobile */
   .live-interview-header {
     height: auto;
-    min-height: 56px;
+    min-height: 52px;
     padding: 0.5rem 0.75rem;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -1509,6 +1601,151 @@ body.sidebar-open {
 
   .exit-btn .exit-text {
     display: none;
+  }
+
+  .live-interview-main {
+    padding: 0.75rem 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Live Question Card (Issue 3: full width question text, compact avatar) */
+  .live-question-card {
+    padding: 1rem 0.85rem !important;
+    margin-bottom: 0.85rem !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .live-question-topbar {
+    margin-bottom: 0.65rem !important;
+    gap: 0.4rem !important;
+  }
+
+  .live-question-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .live-avatar-wrapper {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .live-avatar-wrapper .ai-avatar-portrait {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .live-avatar-wrapper .ai-avatar-icon {
+    font-size: 1.25rem !important;
+  }
+
+  .live-avatar-wrapper .ai-avatar-aura {
+    inset: -3px !important;
+  }
+
+  .live-question-body {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .live-question-subtitle {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  #question-text-content {
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    line-height: 1.45 !important;
+    width: 100% !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Candidate Response Section (Issue 1 & 3: ample space for tools and no cut off) */
+  .live-response-card {
+    padding: 1rem 0.85rem !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .live-response-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.65rem !important;
+  }
+
+  .live-response-label {
+    width: 100% !important;
+    font-size: 0.88rem !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+  }
+
+  .live-response-tools {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+
+  #btn-stt-toggle {
+    font-size: 0.78rem !important;
+    padding: 0.35rem 0.65rem !important;
+    white-space: nowrap !important;
+  }
+
+  #char-count {
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Action Navigation Buttons: 50%/50% flex buttons preventing any right-edge cutoff */
+  .interview-actions-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+    margin-top: 0.85rem !important;
+    padding-top: 0.65rem !important;
+  }
+
+  .interview-flow-status {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    order: 2;
+  }
+
+  .interview-btn-group {
+    display: flex !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+    order: 1;
+  }
+
+  .interview-btn-group .btn-skip,
+  .interview-btn-group .btn-submit {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 0.6rem 0.4rem !important;
+    font-size: 0.85rem !important;
+    text-align: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
   }
 
   /* Mode Selector Grid */
@@ -1622,6 +1859,17 @@ body.sidebar-open {
   from {
     opacity: 0;
     transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownToast {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
   }
   to {
     opacity: 1;

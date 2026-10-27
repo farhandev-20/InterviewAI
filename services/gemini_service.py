@@ -1,10 +1,12 @@
 import os
 import json
 import random
+import re
 import urllib.request
 import urllib.parse
 import urllib.error
 from dotenv import load_dotenv
+from services.question_bank import get_bank_questions, normalize_role, normalize_focus
 
 load_dotenv()
 
@@ -58,34 +60,112 @@ class GeminiService:
 
     @staticmethod
     def generate_ai_questions(role, difficulty, count=5, question_type="Technical"):
-        """Generates role and difficulty specific questions using Gemini API."""
-        prompt = f"""
-        Generate {count} unique, high-quality interview questions for a candidate applying as a '{role}'.
-        Difficulty: {difficulty}
-        Question Type: {question_type}
-
-        Return a JSON array of objects with keys:
-        - "question": string
-        - "topic": string
-        - "difficulty": "{difficulty}"
-        - "sample_answer": string (3-4 sentences model solution)
         """
-        res = GeminiService._call_gemini_api(prompt, json_mode=True)
-        if res and isinstance(res, list) and len(res) > 0:
-            return res
+        Generates authentic, role-specific, focus-aligned interview questions using Gemini API
+        or the comprehensive question bank as an empirically verified fallback.
+        """
+        count = int(count)
+        norm_role = normalize_role(role)
+        norm_focus = normalize_focus(question_type)
 
-        from services.question_bank import QUESTION_BANK
-        filtered = [q for q in QUESTION_BANK if (q['role'] == role or q['role'] == 'All Roles')]
-        if len(filtered) < count:
-            filtered = QUESTION_BANK
-        
-        sampled = random.sample(filtered, min(count, len(filtered)))
-        return [{
-            "question": q["question"],
-            "topic": q["topic"],
-            "difficulty": difficulty,
-            "sample_answer": q["sample_answer"]
-        } for q in sampled]
+        focus_guidelines = {
+            "Technical Interview": (
+                "Focus on role-specific core architecture, mechanisms, performance trade-offs, language/tooling internals, and real production considerations. "
+                "Questions must directly evaluate hands-on technical competence for this exact role."
+            ),
+            "HR Interview": (
+                "Focus on professional motivation, long-term career trajectory, work ethic, communication style, cultural contribution, and organizational fit. "
+                "Questions should assess workplace maturity, enthusiasm, and alignment with company values."
+            ),
+            "Behavioral Interview": (
+                "Every question MUST evaluate past behavior and real experiences using prompts such as 'Tell me about a time when...', 'Describe a situation where...', or 'Can you share an experience where...'. "
+                "Direct the candidate to demonstrate actions, teamwork, conflict resolution, accountability, and measurable results."
+            ),
+            "Scenario Based Interview": (
+                "Every question MUST present a realistic, high-stakes workplace or engineering scenario (e.g., sudden production outage, scope creep, conflicting stakeholder demands, data inconsistency). "
+                "Ask how the candidate would systematically evaluate the situation and take action."
+            ),
+            "Problem Solving Interview": (
+                "Every question MUST present a practical, concrete role-relevant challenge or design problem (e.g. optimizing a bottleneck, designing a specific flow, debugging an elusive bug). "
+                "Ask the candidate to explain their step-by-step analytical thought process, trade-offs, and proposed solution."
+            )
+        }.get(norm_focus, "Focus on role-relevant questions tailored to the position.")
+
+        difficulty_guidelines = {
+            "Easy": "Foundational concepts, fundamental principles, common workflows, and basic best practices suitable for entry or junior-level discussions.",
+            "Medium": "Real-world production engineering, design trade-offs, error handling, optimization, and collaboration expected of mid-level professionals.",
+            "Hard": "Complex distributed architecture, scalability limits, failure recovery, deep system internals, edge cases, and high-impact decision making expected of senior/lead engineers."
+        }.get(difficulty, "Practical professional level.")
+
+        system_instruction = (
+            f"You are a seasoned hiring manager and interviewer conducting a formal interview for a '{norm_role}' position.\n"
+            f"The interview focus for this round is: '{norm_focus}'.\n"
+            f"Difficulty calibration: '{difficulty}'.\n"
+            "Ask authentic, realistic questions that real interviewers ask in high-standard hiring loops. "
+            "Never ask generic trivia, filler questions, or cross-domain questions unrelated to the candidate's specific role and focus."
+        )
+
+        prompt = f"""
+        Role: {norm_role}
+        Interview Focus: {norm_focus}
+        Difficulty: {difficulty}
+        Number of Questions Required: {count}
+
+        Focus Instructions:
+        {focus_guidelines}
+
+        Difficulty Calibration:
+        {difficulty_guidelines}
+
+        Progression & Quality Rules:
+        - Generate exactly {count} distinct, non-repeating questions.
+        - Arrange questions in a natural progression: start with foundational/warm-up questions and progress into deeper, more complex questions.
+        - Questions must sound conversational, natural, and direct, exactly as asked by a real interviewer.
+        - STRICT RULE: Absolutely NO questions from unrelated roles or irrelevant domains.
+
+        Output Format:
+        Return ONLY a JSON array of {count} objects with keys:
+        - "question": string (the exact wording of the question)
+        - "topic": string (concise topic label)
+        - "difficulty": "{difficulty}"
+        - "sample_answer": string (3-4 sentences model answer explaining what a great response covers)
+        """
+
+        res = GeminiService._call_gemini_api(prompt, system_instruction=system_instruction, json_mode=True)
+        valid_questions = []
+        seen_texts = set()
+
+        if res and isinstance(res, list):
+            for item in res:
+                if isinstance(item, dict) and "question" in item:
+                    q_text = str(item["question"]).strip()
+                    if len(q_text) > 15 and q_text.lower() not in seen_texts:
+                        seen_texts.add(q_text.lower())
+                        valid_questions.append({
+                            "question": q_text,
+                            "topic": str(item.get("topic", norm_focus)),
+                            "difficulty": str(item.get("difficulty", difficulty)),
+                            "sample_answer": str(item.get("sample_answer", "Candidates should provide a structured response covering core principles, real-world context, and key trade-offs."))
+                        })
+
+        if len(valid_questions) >= count:
+            return valid_questions[:count]
+
+        # Supplement or fallback with curated question bank questions
+        bank_q = get_bank_questions(norm_role, norm_focus, difficulty, count)
+        for bq in bank_q:
+            if bq["question"].lower() not in seen_texts:
+                seen_texts.add(bq["question"].lower())
+                valid_questions.append({
+                    "question": bq["question"],
+                    "topic": bq["topic"],
+                    "difficulty": bq.get("difficulty", difficulty),
+                    "sample_answer": bq["sample_answer"]
+                })
+            if len(valid_questions) >= count:
+                break
+
+        return valid_questions[:count]
 
     @staticmethod
     def evaluate_answer(question_text, user_answer, role="Software Engineer", difficulty="Medium"):
@@ -341,61 +421,245 @@ class GeminiService:
         }
 
     @staticmethod
-    def generate_resume_interview_questions(resume_text, jd_text="", count=5):
+    def _extract_resume_entities(resume_text):
         """
-        Phase 4: Generates personalized interview questions directly referencing candidate's uploaded resume!
+        Extracts projects, work experiences, and technical skills present in resume text.
+        Guarantees questions are grounded in reality without hallucinating details.
         """
+        if not resume_text:
+            return {"projects": [], "experiences": [], "skills": []}
+
+        lines = resume_text.splitlines()
+        in_proj = False
+        in_exp = False
+        projects = []
+        experiences = []
+
+        for line in lines:
+            sline = line.strip()
+            upper = sline.upper()
+            if any(h in upper for h in ["PROJECTS", "PERSONAL PROJECTS", "KEY PROJECTS"]):
+                in_proj = True
+                in_exp = False
+                continue
+            elif any(h in upper for h in ["EXPERIENCE", "WORK EXPERIENCE", "EMPLOYMENT", "PROFESSIONAL EXPERIENCE"]):
+                in_exp = True
+                in_proj = False
+                continue
+            elif any(h in upper for h in ["SKILLS", "TECHNICAL SKILLS", "EDUCATION", "CERTIFICATIONS"]):
+                in_proj = False
+                in_exp = False
+                continue
+
+            if in_proj and sline:
+                clean = re.sub(r'^[•\-\*\d\.]+\s*', '', sline)
+                if ':' in clean:
+                    p_name = clean.split(':')[0].strip()
+                    if 3 <= len(p_name) <= 50 and not any(k in p_name.upper() for k in ["SKILL", "HTTP", "WWW", "GITHUB", "EMAIL", "PHONE"]):
+                        projects.append(p_name)
+                elif len(clean) <= 45 and not clean.endswith('.'):
+                    projects.append(clean)
+
+            if in_exp and sline:
+                clean = re.sub(r'^[•\-\*\d\.]+\s*', '', sline)
+                if any(delim in clean for delim in ['@', ' - ', '–', ' at ']):
+                    if len(clean) <= 65:
+                        experiences.append(clean)
+
+        # Detect technical skills mentioned in text
+        known_skill_keywords = [
+            "Python", "JavaScript", "TypeScript", "React", "Next.js", "Angular", "Vue", "Java", "Spring Boot",
+            "SQL", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Docker", "Kubernetes", "AWS", "Azure", "GCP",
+            "CI/CD", "Git", "REST APIs", "GraphQL", "PyTorch", "TensorFlow", "Pandas", "NumPy", "Scikit-Learn",
+            "Figma", "Design Systems", "Power BI", "Tableau", "Flask", "Django", "FastAPI", "HTML5", "CSS3"
+        ]
+        detected_skills = []
+        for sk in known_skill_keywords:
+            if re.search(r'\b' + re.escape(sk) + r'\b', resume_text, re.IGNORECASE):
+                detected_skills.append(sk)
+
+        return {
+            "projects": projects,
+            "experiences": experiences,
+            "skills": detected_skills
+        }
+
+    @staticmethod
+    def generate_resume_interview_questions(resume_text, jd_text="", count=5, role="Python Developer", difficulty="Medium", interview_type="Technical Interview"):
+        """
+        Phase 4: Generates personalized interview questions directly referencing candidate's uploaded resume.
+        Enforces strict grounding: only references projects and skills explicitly in the candidate's resume.
+        Falls back to role-based interview questions if resume is absent.
+        """
+        count = int(count)
+        norm_role = normalize_role(role)
+        norm_focus = normalize_focus(interview_type)
+
+        if not resume_text or not resume_text.strip():
+            return GeminiService.generate_ai_questions(norm_role, difficulty, count, norm_focus)
+
         prompt = f"""
-        Candidate Resume: "{resume_text[:2500]}"
-        Job Posting: "{jd_text[:1500]}"
+        Candidate Target Role: {norm_role}
+        Interview Focus: {norm_focus}
+        Difficulty: {difficulty}
+        Required Question Count: {count}
 
-        Generate {count} personalized interview questions referencing specific projects, technologies, or work experience from the candidate's resume (e.g., "I noticed your project X...").
+        Candidate Resume:
+        \"\"\"{resume_text[:3500]}\"\"\"
 
-        Return a JSON array of objects with keys:
-        - "question": string (personalized question text)
-        - "topic": string (e.g., Project Architecture, Database Optimization)
-        - "difficulty": "Medium"
-        - "sample_answer": string (model answer advice)
+        Job Description Context:
+        \"\"\"{jd_text[:1500]}\"\"\"
+
+        STRICT GROUNDING & QUALITY REQUIREMENTS:
+        1. GROUNDING: Every question MUST be strictly grounded in actual projects, companies, tools, and experiences EXPLICITLY mentioned in the candidate's resume above.
+        2. NEVER INVENT: Never hallucinate or assume experience, metrics, languages, or tools that are not in the resume text.
+        3. FOCUS ALIGNMENT:
+           - Technical Interview: Probe the technical architecture, design decisions, and tech stack of projects listed on their resume.
+           - HR Interview: Explore motivations, transitions between companies/roles mentioned, and team alignment.
+           - Behavioral Interview: Ask behavioral questions anchored in their resume (e.g. 'Tell me about a time during your project [Project Name] where...').
+           - Scenario Based Interview: Ask scenario questions based on the technologies/systems they actually built (e.g. 'In your [Project Name], suppose...').
+           - Problem Solving Interview: Present a practical problem regarding the architecture or tools listed on their resume.
+        4. Questions must sound like a sharp interviewer genuinely reviewing their portfolio.
+
+        Return a JSON array of {count} objects with keys:
+        - "question": string
+        - "topic": string
+        - "difficulty": "{difficulty}"
+        - "sample_answer": string
         """
 
         res = GeminiService._call_gemini_api(prompt, json_mode=True)
-        if res and isinstance(res, list) and len(res) > 0:
-            return res
+        valid_questions = []
+        seen_texts = set()
 
-        # Resilient fallback referencing general projects
-        fallback_list = [
-            {
-                "question": "I noticed your web application project on your resume. Explain the database schema design and how you optimized query latency.",
-                "topic": "Project Architecture & SQL",
-                "difficulty": "Medium",
-                "sample_answer": "Focus on table normalization, foreign key constraints, column indexing, and caching strategy."
-            },
-            {
-                "question": "Based on your technical experience with Python and REST APIs, walk me through how you handle third-party service rate limits and network errors.",
-                "topic": "API Resilience & Error Handling",
-                "difficulty": "Medium",
-                "sample_answer": "Describe exponential backoff retries, circuit breaker patterns, and fallback mock responses."
-            },
-            {
-                "question": "Looking at your skills section, how do you approach selecting between a relational database (like PostgreSQL) versus a NoSQL document store for a new service?",
-                "topic": "Database Selection Trade-offs",
-                "difficulty": "Hard",
-                "sample_answer": "Compare ACID transaction requirements, schema flexibility, join complexity, and horizontal scaling needs."
-            },
-            {
-                "question": "Describe a scenario from your recent work history where a critical bug occurred in production. How did you diagnose and resolve it?",
-                "topic": "Debugging & Crisis Management",
-                "difficulty": "Medium",
-                "sample_answer": "Use the STAR method: Situation (production bug), Task (incident command), Action (log analysis & hotfix), Result (zero downtime post-mortem)."
-            },
-            {
-                "question": "In your experience collaborating on cross-functional software teams, how do you handle technical disagreements regarding feature specifications?",
-                "topic": "Behavioral & Collaboration",
-                "difficulty": "Easy",
-                "sample_answer": "Highlight objective data benchmarks, listening to stakeholder concerns, and reaching a consensus on MVP scope."
-            }
-        ]
-        return fallback_list[:count]
+        if res and isinstance(res, list):
+            for item in res:
+                if isinstance(item, dict) and "question" in item:
+                    q_text = str(item["question"]).strip()
+                    if len(q_text) > 15 and q_text.lower() not in seen_texts:
+                        seen_texts.add(q_text.lower())
+                        valid_questions.append({
+                            "question": q_text,
+                            "topic": str(item.get("topic", "Resume Project Evaluation")),
+                            "difficulty": str(item.get("difficulty", difficulty)),
+                            "sample_answer": str(item.get("sample_answer", "Highlight specific architectural choices and quantifiable achievements."))
+                        })
+
+        if len(valid_questions) >= count:
+            return valid_questions[:count]
+
+        # Resilient Grounded Fallback: Anchor directly to extracted resume entities
+        entities = GeminiService._extract_resume_entities(resume_text)
+        projects = entities.get("projects", [])
+        experiences = entities.get("experiences", [])
+        skills = entities.get("skills", [])
+
+        fallback_questions = []
+        # Generate project-anchored questions
+        for p in projects:
+            if norm_focus == "Behavioral Interview":
+                fallback_questions.append({
+                    "question": f"Tell me about a time while developing your '{p}' project where you encountered an unexpected technical roadblock or bottleneck. How did you resolve it?",
+                    "topic": f"Project Experience ({p})",
+                    "difficulty": difficulty,
+                    "sample_answer": "Structure your response with STAR: explain the blocker, specific diagnostic steps, and the measurable outcome."
+                })
+            elif norm_focus == "Scenario Based Interview":
+                fallback_questions.append({
+                    "question": f"In the context of your '{p}' project, imagine user traffic scaled 10x overnight or a third-party dependency became unavailable. How would your architecture handle the load?",
+                    "topic": f"Scalability Scenario ({p})",
+                    "difficulty": difficulty,
+                    "sample_answer": "Discuss load balancing, horizontal scaling, caching strategies, and circuit breakers."
+                })
+            elif norm_focus == "Problem Solving Interview":
+                fallback_questions.append({
+                    "question": f"Looking at your '{p}' project, suppose you observed an intermittent latency spike in the core user flow. Walk me through your step-by-step troubleshooting plan.",
+                    "topic": f"Problem Solving ({p})",
+                    "difficulty": difficulty,
+                    "sample_answer": "Analyze request traces, database execution plans, server resource utilization, and isolated test reproduction."
+                })
+            elif norm_focus == "HR Interview":
+                fallback_questions.append({
+                    "question": f"What was your motivation behind building '{p}', and how did that project contribute to your growth as a {norm_role}?",
+                    "topic": f"Project Motivation ({p})",
+                    "difficulty": difficulty,
+                    "sample_answer": "Highlight personal initiative, technical curiosity, and how the learning translates to team value."
+                })
+            else: # Technical Interview
+                fallback_questions.append({
+                    "question": f"In your '{p}' project listed on your resume, explain the underlying architecture, data flow, and key technical decisions you made.",
+                    "topic": f"Project Architecture ({p})",
+                    "difficulty": difficulty,
+                    "sample_answer": "Explain database schemas, API contracts, caching layers, and deployment setup."
+                })
+
+        # Generate experience-anchored questions
+        for exp in experiences:
+            if norm_focus == "HR Interview":
+                fallback_questions.append({
+                    "question": f"Reflecting on your role as '{exp}', what workplace culture or team environment allowed you to do your best work?",
+                    "topic": "Career Experience & Culture",
+                    "difficulty": difficulty,
+                    "sample_answer": "Discuss collaborative values, clear communication, autonomy, and mutual feedback."
+                })
+            elif norm_focus == "Behavioral Interview":
+                fallback_questions.append({
+                    "question": f"Describe a situation from your experience as '{exp}' where you had to manage conflicting priorities or an aggressive delivery deadline.",
+                    "topic": "Deadline & Priority Management",
+                    "difficulty": difficulty,
+                    "sample_answer": "Explain backlog triage, transparent stakeholder communication, MVP scoping, and timely delivery."
+                })
+            else:
+                fallback_questions.append({
+                    "question": f"During your experience as '{exp}', what was the most significant technical challenge you solved, and what measurable impact did it achieve?",
+                    "topic": "Professional Experience Impact",
+                    "difficulty": difficulty,
+                    "sample_answer": "Cite the business problem, your engineering contribution, and metrics like latency reduction or throughput gains."
+                })
+
+        # Generate skill-anchored questions
+        for sk in skills:
+            if len(fallback_questions) >= count * 2:
+                break
+            if norm_focus == "Technical Interview":
+                fallback_questions.append({
+                    "question": f"Your resume highlights hands-on experience with {sk}. Walk me through how you optimize {sk} in production and common pitfalls to avoid.",
+                    "topic": f"{sk} Production Best Practices",
+                    "difficulty": difficulty,
+                    "sample_answer": f"Highlight memory management, indexing, concurrency controls, or configuration best practices for {sk}."
+                })
+            elif norm_focus == "Problem Solving Interview":
+                fallback_questions.append({
+                    "question": f"Given your technical skills with {sk}, how would you approach diagnosing a silent memory leak or resource exhaustion issue in that environment?",
+                    "topic": f"{sk} Diagnostic Problem Solving",
+                    "difficulty": difficulty,
+                    "sample_answer": "Describe heap dump profiling, thread dump analysis, and resource monitoring metrics."
+                })
+
+        # Merge grounded fallback questions
+        for fq in fallback_questions:
+            if fq["question"].lower() not in seen_texts:
+                seen_texts.add(fq["question"].lower())
+                valid_questions.append(fq)
+            if len(valid_questions) >= count:
+                break
+
+        # If still short, supplement with question bank
+        if len(valid_questions) < count:
+            bank_q = get_bank_questions(norm_role, norm_focus, difficulty, count)
+            for bq in bank_q:
+                if bq["question"].lower() not in seen_texts:
+                    seen_texts.add(bq["question"].lower())
+                    valid_questions.append({
+                        "question": bq["question"],
+                        "topic": bq["topic"],
+                        "difficulty": bq.get("difficulty", difficulty),
+                        "sample_answer": bq["sample_answer"]
+                    })
+                if len(valid_questions) >= count:
+                    break
+
+        return valid_questions[:count]
 
     @staticmethod
     def analyze_resume(resume_text, target_role="Software Engineer"):
@@ -491,13 +755,17 @@ class GeminiService:
         previous_history=None,
         candidate_profile="",
         last_answer="",
-        last_score=75.0
+        last_score=75.0,
+        interview_type="Technical Interview"
     ):
         """
         Generates a context-aware, adaptive next interview question dynamically.
         Extracts skills, tools, and projects mentioned by the candidate, adapts difficulty,
         and progresses through structured interview stages like an authentic human HR/Tech Interviewer.
         """
+        norm_role = normalize_role(role)
+        norm_focus = normalize_focus(interview_type)
+
         if previous_history is None:
             previous_history = []
 
@@ -511,7 +779,8 @@ class GeminiService:
 
         prompt = f"""
         You are an elite, highly engaging AI HR and Technical Interviewer conducting a dynamic live interview.
-        Target Role: {role}
+        Target Role: {norm_role}
+        Interview Focus: {norm_focus}
         Interview Progress: Question {question_number} of {total_questions}
         Current Stage: {interview_stage}
         Current Difficulty: {difficulty}
@@ -524,17 +793,17 @@ class GeminiService:
         Most Recent Answer Score: {last_score}%
 
         CORE INSTRUCTIONS:
-        1. Act like a real human HR & Technical Interviewer who actively listens to the candidate.
-        2. EXPLICITLY ANCHOR TO THE CANDIDATE'S WORDS: If the candidate mentioned specific technologies, tools, algorithms, or projects in their answer (e.g. "I worked on Python and machine learning projects"), your next question MUST directly reference what they said (e.g. "You mentioned machine learning projects. Can you explain one of those projects and the algorithm you used?").
-        3. PROGRESS THE INTERVIEW STAGE:
-           - Stage 1 (Intro): Ask about background, journey, and technical focus.
-           - Stage 2 (Technical Fundamentals): Probe deeper into languages/tools they mentioned.
-           - Stage 3 (Project & Architecture): Ask about system trade-offs, architecture, and database design.
-           - Stage 4 (Problem Solving & Edge Cases): Ask about optimization, scalability, and production debugging.
-           - Stage 5 (Behavioral & Leadership): Ask about team collaboration, conflict resolution, or deadlines.
+        1. Act like a real human interviewer who actively listens to the candidate.
+        2. EXPLICITLY ANCHOR TO THE CANDIDATE'S WORDS: If the candidate mentioned specific technologies, tools, algorithms, or projects in their answer, your next question MUST directly reference what they said.
+        3. RESPECT THE INTERVIEW FOCUS:
+           - If focus is 'Technical Interview': Focus on role-specific architecture, code structure, tools, and engineering decisions.
+           - If focus is 'HR Interview': Focus on motivation, culture fit, communication, and work style.
+           - If focus is 'Behavioral Interview': Ask behavioral questions (e.g., 'Tell me about a time when...').
+           - If focus is 'Scenario Based Interview': Ask how they would respond to a specific workplace or engineering situation.
+           - If focus is 'Problem Solving Interview': Ask how they would diagnose or resolve a concrete technical/design problem.
         4. DYNAMIC DIFFICULTY ADJUSTMENT:
-           - If their last score was low (< 60%), ask a foundational or clarifying question.
-           - If their last score was high (>= 80%), escalate to architectural trade-offs, distributed systems, or performance edge cases.
+           - If last score was low (< 60%), ask a foundational or clarifying question.
+           - If last score was high (>= 80%), escalate to architectural trade-offs, edge cases, or deeper insights.
         5. Provide a natural, empathetic transition phrase (e.g. "That's a great example.", "Interesting approach with Python.", "Understood, let's explore that deeper.").
 
         Return JSON object with keys:
@@ -602,16 +871,49 @@ class GeminiService:
                 "detected_skills": detected_skills
             }
 
-        # 5. General Stage-Driven Question Progression
-        stage_questions = {
-            1: (f"Could you start by introducing yourself, your technical background, and what inspired you to pursue a career as a {role}?", "Hello and welcome! Let's get to know each other."),
-            2: (f"Based on your background for the {role} position, what do you consider to be the most critical technical skill or principle in your day-to-day workflow?", "Thanks for sharing your background."),
-            3: ("Tell me about a challenging project you built recently. What were the key architectural decisions you made and what trade-offs did you encounter?", "Let's dive into your practical project experience."),
-            4: ("Describe a situation where you had to diagnose and resolve a severe performance bottleneck or production bug. How did you identify the root cause?", "Problem solving is a vital part of engineering."),
-            5: ("In a cross-functional team, how do you handle situations where product requirements conflict with technical debt or deadline constraints?", "Collaboration and communication are key to our culture."),
-        }
+        # 5. General Stage-Driven Question Progression tailored to role & focus
+        if norm_focus == "HR Interview":
+            stage_questions = {
+                1: (f"Could you start by walking me through your background and what specifically attracted you to this {norm_role} position at our organization?", "Hello and welcome! Let's get to know each other."),
+                2: ("How would you describe your ideal work environment and the communication style that allows you to be most productive?", "Thanks for sharing your journey."),
+                3: ("Tell me about a time when you received constructive feedback that challenged you. How did you process it and apply the learning?", "Growth and feedback are central to our culture."),
+                4: ("Where do you see yourself professionally in two to three years, and how does this role fit into that trajectory?", "Career aspirations are important for long-term alignment."),
+                5: ("What are the top qualities you look for in your teammates and manager when deciding on a new team?", "Team dynamics make a huge difference in day-to-day success.")
+            }
+        elif norm_focus == "Behavioral Interview":
+            stage_questions = {
+                1: (f"Tell me about a recent project you delivered as a {norm_role}. What was the most significant challenge you navigated during development?", "Welcome! Let's discuss your practical experience."),
+                2: ("Describe a situation where a project requirement or priority suddenly shifted midway through a sprint. How did you adapt your plan?", "Agility is key in engineering teams."),
+                3: ("Can you share an experience where you had a disagreement with a team member or stakeholder about a technical approach? How did you resolve it?", "Collaboration requires navigating different perspectives."),
+                4: ("Tell me about a time you took ownership of a task or problem outside your direct responsibility because it needed to get done.", "Initiative is deeply valued on our team."),
+                5: ("Describe a time you made an error or misjudgment in production. How did you handle the remediation and what safeguards did you put in place?", "Reflecting on mistakes is how the best engineers grow.")
+            }
+        elif norm_focus == "Scenario Based Interview":
+            stage_questions = {
+                1: (f"Imagine you just joined as a {norm_role} and discovered the existing code has minimal test coverage and frequent regressions. What is your 30-day action plan?", "Let's walk through a realistic engineering scenario."),
+                2: ("Suppose a mission-critical service begins throwing 500 errors during a high-traffic launch. How do you triage, communicate, and stabilize the system?", "Incident management is critical under pressure."),
+                3: ("Imagine product leadership requests an urgent feature launch in two days, but building it cleanly requires a week. How do you handle this trade-off?", "Balancing speed with code quality is an ongoing challenge."),
+                4: ("Suppose two core microservices have an interdependent circular dependency causing deadlock under load. How would you redesign the architecture?", "Let's look at a distributed systems edge case."),
+                5: ("Imagine an external API partner unexpectedly changes their schema without advance notice, breaking downstream consumers. How do you mitigate this in production?", "Resilient contract design is vital.")
+            }
+        elif norm_focus == "Problem Solving Interview":
+            stage_questions = {
+                1: (f"As a {norm_role}, walk me through how you decompose a vague, open-ended technical requirement into actionable, testable milestones.", "Welcome! Let's dive into your problem solving methodology."),
+                2: ("Suppose an API endpoint's p99 response time degraded from 50ms to 950ms over the last week. Walk me step-by-step through how you isolate the bottleneck.", "Diagnostics and root-cause analysis are key."),
+                3: ("How would you design a caching and data invalidation mechanism for an application with heavy write loads and strict freshness requirements?", "System optimization often hinges on caching trade-offs."),
+                4: ("Given a massive dataset that cannot fit into server memory, how would you process and aggregate records efficiently without crashing the worker nodes?", "Resource constraints test practical engineering fundamentals."),
+                5: ("How do you approach refactoring a mission-critical legacy component without interrupting 24/7 production traffic?", "Zero-downtime refactoring requires careful planning.")
+            }
+        else: # Technical Interview
+            stage_questions = {
+                1: (f"Could you start by introducing yourself, your core technical stack, and your experience working as a {norm_role}?", "Hello and welcome! Let's get to know your technical background."),
+                2: (f"Based on your background for the {norm_role} position, what do you consider to be the most critical technical principles or design patterns in your day-to-day workflow?", "Thanks for sharing your background."),
+                3: ("Tell me about a challenging architectural decision you made recently. What options did you evaluate and what trade-offs did you make?", "Let's dive into your practical system design experience."),
+                4: ("Describe a situation where you had to diagnose and resolve a severe performance bottleneck or production bug. How did you identify the root cause?", "Problem solving is a vital part of engineering."),
+                5: ("In production systems, how do you approach resilience, automated testing, and error handling for high-availability services?", "Reliability engineering is essential for this role.")
+            }
 
-        q_pair = stage_questions.get(question_number, (f"Looking forward, how do you keep your technical skills sharp as a {role}, and what architectural patterns are you most excited to master next?", "Thank you for that thoughtful response."))
+        q_pair = stage_questions.get(question_number, (f"Looking forward, how do you keep your technical skills sharp as a {norm_role}, and what architectural patterns are you most excited to master next?", "Thank you for that thoughtful response."))
 
         return {
             "question": q_pair[0],
@@ -619,7 +921,7 @@ class GeminiService:
             "topic": interview_stage,
             "difficulty": difficulty,
             "sample_answer": "Structured explanation following the STAR framework (Situation, Task, Action, Result).",
-            "detected_skills": [role, "Engineering Principles"]
+            "detected_skills": [norm_role, "Engineering Principles"]
         }
 
 
